@@ -2,13 +2,16 @@
 
 This plan turns the product spec into implementation phases for `rt-points-2026`.
 
-The first release should prove the live scoring experience with **Team Game Points**. Football tracking should be planned into the structure, but not built until the core product is stable.
+The first release should prove the live scoring experience with **Team Game Points** inside an admin-created event. Football tracking should be planned into the event structure, but not built until the core product is stable.
 
 ## Guiding Principles
 
 - Build the smallest complete live scoring product first.
 - Keep the admin flow fast and hard to misuse during a live event.
 - Make the audience view feel live, clear, and projector-ready.
+- Make events the top-level container for all trackers.
+- Use Supabase Auth for admin accounts and future official access.
+- Let public viewers search for visible events without requiring an account.
 - Use shared concepts that can support both tracker types later: events, teams, participants, public views, admins, officials, and realtime updates.
 - Avoid building full football functionality until the points tracker is working end to end.
 
@@ -24,13 +27,16 @@ Goal: make the product direction concrete before implementation starts.
 - Confirm hosting target: Vercel.
 - Confirm UI direction: shadcn/ui for admin, custom display layer for audience.
 - Confirm realtime provider: Supabase.
-- Decide whether the first version needs real user accounts or a simpler protected admin entry.
+- Confirm admin access model: Supabase Auth.
+- Confirm public access model: searchable public events without viewer accounts.
 
 ### Output
 
 - Final product name or working name.
 - Confirmed MVC scope.
 - Confirmed first event format.
+- Confirmed admin auth model.
+- Confirmed public event search model.
 - Confirmed deployment target.
 
 ## Phase 1: App Foundation
@@ -44,43 +50,59 @@ Goal: create the base application structure.
 - Add Tailwind CSS.
 - Add shadcn/ui.
 - Add core app layout.
-- Add basic navigation for tracker selection.
-- Add routes for admin and public views.
+- Add basic navigation for event search, admin entry, and tracker selection inside events.
+- Add routes for public event search, admin auth, event management, and tracker views.
 - Add shared design tokens for colours, spacing, typography, and UI states.
 - Add Vercel-ready configuration.
 
 ### Initial Routes
 
-- `/` - tracker selection or landing entry
-- `/game-points` - public game points entry
-- `/game-points/admin` - admin dashboard
-- `/game-points/display` - public audience scoreboard
-- `/football` - placeholder future tracker page
+- `/` - public event search and product entry
+- `/login` - admin login
+- `/signup` - admin signup
+- `/admin/events` - admin event list
+- `/admin/events/new` - create event flow
+- `/admin/events/[eventId]` - event admin dashboard
+- `/events/[eventSlug]` - public event detail page
+- `/events/[eventSlug]/game-points` - public game points scoreboard
+- `/admin/events/[eventId]/game-points` - admin game points dashboard
+- `/events/[eventSlug]/football` - placeholder future football public page
 
 ### Output
 
 - Running app shell.
-- Tracker choice screen.
-- Empty admin and audience routes.
+- Public event search shell.
+- Admin auth route shells.
+- Event management route shells.
+- Game Points admin and public route shells.
 - Football route clearly marked as future scope.
 
-## Phase 2: Data Model And Supabase Setup
+## Phase 2: Auth, Events, And Supabase Setup
 
-Goal: define the data structure for the Team Game Points MVC while leaving room for Football later.
+Goal: define the event-first data structure, add Supabase Auth, and connect the app to real event and team data.
 
 ### Steps
 
 - Create Supabase project.
 - Add environment variables locally and in Vercel.
-- Define database tables for the first version.
-- Add seed data for a sample event and teams.
+- Add Supabase Auth client/server helpers.
+- Add admin signup/login/logout flows.
+- Define database tables for events, team game points, and future football expansion.
+- Add row-level security policies.
+- Add event ownership rules.
+- Add public read rules for visible events.
+- Add seed data for a sample event such as `The Jesus Generation` and teams.
 - Add basic data access helpers.
 - Add realtime subscription helper.
-- Decide initial security model.
+- Add public event search helper.
+- Add admin event list helper.
+- Add create event action.
 
 ### Suggested MVC Tables
 
+- `profiles`
 - `events`
+- `event_admins`
 - `teams`
 - `game_points_scores`
 - `score_events`
@@ -96,9 +118,13 @@ Goal: define the data structure for the Team Game Points MVC while leaving room 
 ### Output
 
 - Supabase schema for the MVC.
+- Supabase Auth wired into the app.
+- Admin can create an account and log in.
+- Admin can create an event.
+- Public users can search visible events.
 - Local app connected to Supabase.
 - Seed event with sample teams.
-- Read/write helpers for teams and scores.
+- Read/write helpers for events, teams, and scores.
 
 ## Phase 3: Team Game Points Admin
 
@@ -107,7 +133,9 @@ Goal: build the organiser control panel.
 ### Steps
 
 - Build admin dashboard layout.
-- Show current event details.
+- Show admin-owned events.
+- Add create event screen.
+- Show current event details after event selection.
 - List all teams with current points.
 - Add quick controls for `+1`, `-1`, custom add/subtract, and set exact points.
 - Add team create/edit dialog.
@@ -127,19 +155,24 @@ Goal: build the organiser control panel.
 
 ### Output
 
-- Functional admin dashboard for Team Game Points.
-- Teams can be created and edited.
-- Scores can be updated reliably.
+- Functional admin dashboard for an event's Team Game Points tracker.
+- Admin can create an event and manage that event.
+- Teams can be created and edited inside an event.
+- Scores can be updated reliably inside an event.
 - Team styling can be changed.
 
-## Phase 4: Public Audience Scoreboard
+## Phase 4: Public Event Search And Audience Scoreboard
 
-Goal: create the live display experience.
+Goal: let viewers find an event and open its live display experience.
 
 ### Steps
 
-- Build public scoreboard route.
-- Load current event and team scores.
+- Build public event search route.
+- Search visible events by name.
+- Build public event detail route.
+- Show enabled trackers for the selected event.
+- Build public scoreboard route for the selected event.
+- Load selected event and team scores.
 - Sort teams by points.
 - Show a podium for top three teams.
 - Show remaining teams in a clear ranking list if needed.
@@ -159,6 +192,8 @@ Goal: create the live display experience.
 
 ### Output
 
+- Public event search page.
+- Public event detail page.
 - Public audience scoreboard.
 - Live-looking ranking display.
 - Projector-friendly layout.
@@ -194,13 +229,15 @@ Goal: make score updates feel instant and reliable across devices.
 
 ## Phase 6: Admin Access And Event Controls
 
-Goal: make the app usable for a real event without overbuilding accounts.
+Goal: make the app usable for a real event with account-based admin access and public viewer access.
 
 ### Steps
 
 - Add protected admin entry.
-- Decide whether MVC uses password access, Supabase Auth, or invite-only admin links.
+- Use Supabase Auth for admin access.
+- Add login, signup, logout, and protected route handling.
 - Add event settings screen.
+- Add event visibility setting for public search.
 - Add start, pause, finish, and reset event controls.
 - Add final standings state.
 - Add copy/share links for audience display.
@@ -208,8 +245,9 @@ Goal: make the app usable for a real event without overbuilding accounts.
 
 ### Output
 
-- Admin-only management flow.
+- Account-based admin management flow.
 - Public shareable audience link.
+- Public event search path.
 - Event lifecycle controls.
 
 ## Phase 7: Polish And Validation
@@ -219,6 +257,10 @@ Goal: prepare the MVC for real usage.
 ### Steps
 
 - Review responsive layouts.
+- Test public event search.
+- Test logged-out viewers can open public events.
+- Test logged-out users cannot access admin pages.
+- Test admins only see their events.
 - Test with sample teams and real-looking names/badges.
 - Test score changes from multiple browser windows.
 - Test on mobile width.
@@ -244,6 +286,8 @@ Goal: deploy the MVC and make it shareable.
 - Add Supabase environment variables.
 - Deploy main branch.
 - Confirm production build works.
+- Confirm login/signup works.
+- Confirm public event search works.
 - Confirm admin route works.
 - Confirm audience route works.
 - Confirm realtime updates work on production.
@@ -292,24 +336,31 @@ Goal: plan the second tracker after the points tracker proves the core product.
 ## Suggested Build Order
 
 1. App foundation.
-2. Supabase schema.
-3. Seed event and teams.
-4. Admin team list.
-5. Admin score controls.
-6. Public audience scoreboard.
-7. Realtime updates.
-8. Team editing and badges.
-9. Reset/final standings.
-10. Deployment to Vercel.
-11. Live event test.
-12. Football planning.
+2. Supabase Auth.
+3. Event schema.
+4. Public event search.
+5. Admin event creation.
+6. Seed event and teams.
+7. Admin team list.
+8. Admin score controls.
+9. Public audience scoreboard.
+10. Realtime updates.
+11. Team editing and badges.
+12. Reset/final standings.
+13. Deployment to Vercel.
+14. Live event test.
+15. Football planning.
 
 ## MVC Completion Criteria
 
 The MVC is complete when:
 
 - An organiser can open the admin dashboard.
-- Teams can be created and edited.
+- An organiser can create an account and log in.
+- An organiser can create an event such as `The Jesus Generation`.
+- Public viewers can search for visible events.
+- Public viewers can open a selected event without logging in.
+- Teams can be created and edited inside an event.
 - Scores can be changed during a live event.
 - Audience screens update in real time.
 - Rankings are clear and visually polished.
@@ -320,12 +371,12 @@ The MVC is complete when:
 ## Deferred Until After MVC
 
 - Full football tracker.
-- Multiple simultaneous event management.
-- Advanced auth and roles.
+- Multi-admin event invitations.
+- Official accounts and match assignments.
+- Organisation/team workspaces.
 - Score history UI.
 - Undo and redo.
 - Tournament brackets.
 - Analytics.
 - Payments.
-- Public event discovery.
 - Native mobile app.

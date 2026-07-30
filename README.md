@@ -13,9 +13,44 @@ The app should feel simple enough to run during a live event, but broad enough t
 
 ## Core Product Goal
 
-Organisers should be able to create an event, manage teams, update scores in real time, and publish a clean live display for spectators.
+Organisers should be able to create an account, log in to an admin area, create an event, manage teams, update scores in real time, and publish a clean live display for spectators.
 
 Officials should eventually be able to update live football match scores from the field, with admins able to review, correct, and publish results.
+
+Spectators should be able to search for public events, select the event they want, and view its live game points, football fixtures, live scores, results, and standings.
+
+## Event Model
+
+The event is the main container for everything in the product.
+
+An admin creates an event such as **The Jesus Generation**. That event can contain one or both tracker types:
+
+- **Game Points** - team games, points, rankings, podiums, and winner views.
+- **Football** - teams, fixtures, officials, live match scores, results, and standings.
+
+Each event should have:
+
+- Event name
+- Public search visibility
+- Optional description
+- Optional date or date range
+- Event owner/admin
+- Enabled tracker types
+- Teams
+- Public viewer pages
+- Admin management pages
+
+This keeps the product flexible: the same event can run team games and football without becoming two disconnected products.
+
+## Auth And Access
+
+Admin access should use Supabase Auth.
+
+Admins must have an account and be logged in before they can create or manage events. Admins can only manage events they own or have been invited to manage.
+
+Public viewers should not need an account for the MVC. They should be able to search for visible events, open the selected event, and view live public pages.
+
+Future official access can also use Supabase Auth, with officials invited to specific football matches or events.
 
 ## Tracker 1: Team Game Points
 
@@ -25,6 +60,7 @@ Use this mode when teams collect points across games, rounds, or challenges.
 
 ### Core Features
 
+- Create or select an event
 - Create and manage teams
 - Set team names, colours, and badges
 - Add points
@@ -54,6 +90,7 @@ Use this mode for football competitions where teams play scheduled matches and o
 
 ### Future Features
 
+- Add football to an existing event
 - Manage football teams
 - Create fixtures and schedules
 - Assign officials to matches
@@ -68,32 +105,46 @@ Use this mode for football competitions where teams play scheduled matches and o
 
 ## Main App Experience
 
-The app should start with a clear tracker choice:
+The app should start with a clear event-first flow:
+
+- Public viewers search for an event.
+- Public viewers open the selected event.
+- Admins log in.
+- Admins create or manage their events.
+
+Inside an event, the app should show a clear tracker choice:
 
 - **Game Points**
 - **Football**
 
-Each tracker should have its own admin workflow and public display, while sharing the same visual identity, team data patterns, event structure, and real-time update feel.
+Each tracker should have its own admin workflow and public display, while sharing the same event, visual identity, team data patterns, and real-time update feel.
 
 ## MVC Scope
 
-The first version should focus only on **Team Game Points**.
+The first version should focus on event creation, public event discovery, and **Team Game Points**.
 
 ### MVC Screens
 
-- Start screen with tracker choice
-- Admin login or protected admin entry
-- Admin dashboard
+- Public event search
+- Public event detail page
+- Admin signup/login
+- Admin event list
+- Create event flow
+- Event admin dashboard
 - Team score controls
 - Team settings dialog
 - Image or badge upload dialog
-- Audience scoreboard
+- Public audience scoreboard for selected event
 - Winner or final standings view
 
 ### MVC Features
 
-- One active event
-- Multiple teams
+- Supabase Auth for admin signup/login
+- Admin creates an event
+- Public viewers can search visible events
+- Public viewers can open an event without logging in
+- One or more admin-owned events
+- Multiple teams per event
 - Team name, colour, badge, and score
 - Admin score controls
 - Public audience view
@@ -105,15 +156,14 @@ The first version should focus only on **Team Game Points**.
 
 ## Out Of Scope For MVC
 
-- Multiple simultaneous events
 - Full football fixture management
-- Complex user accounts
-- Role-based permissions
+- Complex organisation accounts
+- Multi-admin event invitations
+- Official accounts and assignments
 - Score history
 - Undo and redo
 - Tournament brackets
 - Payments or subscriptions
-- Public event discovery
 - Advanced analytics
 
 ## Design Direction
@@ -152,6 +202,7 @@ Implementation details can change, but the intended direction is:
 - shadcn/ui for admin interface components
 - Tailwind CSS for styling
 - Supabase for database and realtime updates
+- Supabase Auth for admin login and future official access
 - Vercel for hosting and preview deployments
 
 ## Realtime Principle
