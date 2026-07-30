@@ -1,24 +1,31 @@
-import { rankedTeams } from "@/lib/sample-data";
+import { getEventBySlug } from "@/lib/sample-data";
 
-const podiumOrder = [rankedTeams[1], rankedTeams[0], rankedTeams[2]].filter(
-  Boolean,
-);
+export default async function EventGamePointsPage({
+  params,
+}: {
+  params: Promise<{ eventSlug: string }>;
+}) {
+  const { eventSlug } = await params;
+  const event = getEventBySlug(eventSlug);
+  const rankedTeams = [...event.teams].sort((a, b) => b.points - a.points);
+  const podiumOrder = [rankedTeams[1], rankedTeams[0], rankedTeams[2]].filter(
+    Boolean,
+  );
 
-export default function GamePointsDisplayPage() {
   return (
     <main className="display-surface min-h-screen overflow-hidden text-white">
       <section className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 py-8">
         <header className="flex items-center justify-between border-b border-white/10 pb-5">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-200">
-              Glow Games
+              {event.name}
             </p>
             <h1 className="mt-2 text-4xl font-bold tracking-normal">
-              Live Standings
+              Game Points
             </h1>
           </div>
           <div className="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-4 py-2 text-sm font-semibold text-emerald-100">
-            Live display shell
+            Public live display
           </div>
         </header>
 
@@ -26,7 +33,11 @@ export default function GamePointsDisplayPage() {
           {podiumOrder.map((team) => {
             const place = rankedTeams.findIndex((item) => item.id === team.id) + 1;
             const height =
-              place === 1 ? "lg:min-h-[560px]" : place === 2 ? "lg:min-h-[460px]" : "lg:min-h-[390px]";
+              place === 1
+                ? "lg:min-h-[560px]"
+                : place === 2
+                  ? "lg:min-h-[460px]"
+                  : "lg:min-h-[390px]";
 
             return (
               <article

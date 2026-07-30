@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getEventBySlug } from "@/lib/sample-data";
 
 const futureAreas = [
   {
@@ -26,16 +27,23 @@ const futureAreas = [
   },
 ];
 
-export default function FootballPage() {
+export default async function EventFootballPage({
+  params,
+}: {
+  params: Promise<{ eventSlug: string }>;
+}) {
+  const { eventSlug } = await params;
+  const event = getEventBySlug(eventSlug);
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center px-6 py-10">
       <div className="mb-8 max-w-3xl">
         <StatusPill tone="planned">Future tracker</StatusPill>
         <h1 className="mt-4 text-4xl font-bold tracking-normal text-slate-950">
-          Football match tracking is planned after the points MVC.
+          Football for {event.name}
         </h1>
         <p className="mt-4 text-lg leading-8 text-slate-600">
-          This route reserves space for fixtures, live scores, officials, match
+          This event can later contain fixtures, live scores, officials, match
           status, results, and standings.
         </p>
       </div>

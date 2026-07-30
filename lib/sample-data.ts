@@ -6,6 +6,18 @@ export type Team = {
   points: number;
 };
 
+export type EventSummary = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  dateLabel: string;
+  location: string;
+  visibility: "public" | "private";
+  trackers: Array<"game-points" | "football">;
+  teams: Team[];
+};
+
 export const sampleTeams: Team[] = [
   {
     id: "zion",
@@ -37,4 +49,43 @@ export const sampleTeams: Team[] = [
   },
 ];
 
-export const rankedTeams = [...sampleTeams].sort((a, b) => b.points - a.points);
+export const sampleEvents: EventSummary[] = [
+  {
+    id: "evt_jesus_generation",
+    slug: "the-jesus-generation",
+    name: "The Jesus Generation",
+    description:
+      "A live event with team games now and football match tracking planned for the same event.",
+    dateLabel: "Summer 2026",
+    location: "Main auditorium",
+    visibility: "public",
+    trackers: ["game-points", "football"],
+    teams: sampleTeams,
+  },
+  {
+    id: "evt_glow_games",
+    slug: "glow-games",
+    name: "Glow Games",
+    description:
+      "A public points tracker for house-style team games and live audience standings.",
+    dateLabel: "Demo event",
+    location: "Projector display",
+    visibility: "public",
+    trackers: ["game-points"],
+    teams: sampleTeams.slice(0, 3),
+  },
+];
+
+export const selectedEvent = sampleEvents[0];
+
+export const rankedTeams = [...selectedEvent.teams].sort(
+  (a, b) => b.points - a.points,
+);
+
+export function getEventBySlug(slug: string) {
+  return sampleEvents.find((event) => event.slug === slug) ?? selectedEvent;
+}
+
+export function getEventById(id: string) {
+  return sampleEvents.find((event) => event.id === id) ?? selectedEvent;
+}

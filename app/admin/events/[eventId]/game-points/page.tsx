@@ -8,9 +8,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { sampleTeams } from "@/lib/sample-data";
+import { getEventById } from "@/lib/sample-data";
 
-export default function GamePointsAdminPage() {
+export default async function AdminEventGamePointsPage({
+  params,
+}: {
+  params: Promise<{ eventId: string }>;
+}) {
+  const { eventId } = await params;
+  const event = getEventById(eventId);
+
   return (
     <main className="min-h-screen bg-slate-50">
       <section className="mx-auto w-full max-w-7xl px-6 py-8">
@@ -18,17 +25,17 @@ export default function GamePointsAdminPage() {
           <div>
             <StatusPill tone="live">Game Points Admin</StatusPill>
             <h1 className="mt-4 text-3xl font-bold tracking-normal text-slate-950">
-              Glow Games control panel
+              {event.name}
             </h1>
             <p className="mt-2 text-slate-600">
-              Static Phase 1 shell. Score actions and team editing will connect
-              to Supabase in the next phases.
+              Static event-scoped control panel. Supabase Auth and database
+              writes arrive in Phase 2.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline">
               <Settings className="h-4 w-4" />
-              Event settings
+              Team settings
             </Button>
             <Button variant="secondary">
               <RotateCcw className="h-4 w-4" />
@@ -38,13 +45,13 @@ export default function GamePointsAdminPage() {
         </header>
 
         <div className="grid gap-4 lg:grid-cols-2">
-          {sampleTeams.map((team) => (
+          {event.teams.map((team) => (
             <Card key={team.id}>
               <CardHeader className="flex flex-row items-start justify-between space-y-0">
                 <div>
                   <CardTitle className="text-xl">{team.name}</CardTitle>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Team controls
+                    Event team controls
                   </p>
                 </div>
                 <div
