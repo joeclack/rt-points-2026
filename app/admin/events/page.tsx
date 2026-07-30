@@ -10,9 +10,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { sampleEvents } from "@/lib/sample-data";
+import { requireAdminUser } from "@/lib/auth";
+import { getAdminEvents } from "@/lib/events";
 
-export default function AdminEventsPage() {
+export default async function AdminEventsPage() {
+  await requireAdminUser();
+  const events = await getAdminEvents();
+
   return (
     <main className="min-h-screen bg-slate-50">
       <section className="mx-auto w-full max-w-6xl px-6 py-8">
@@ -35,7 +39,7 @@ export default function AdminEventsPage() {
         </header>
 
         <div className="grid gap-4 md:grid-cols-2">
-          {sampleEvents.map((event) => (
+          {events.map((event) => (
             <Card key={event.id}>
               <CardHeader>
                 <div className="mb-3 flex items-center justify-between gap-3">

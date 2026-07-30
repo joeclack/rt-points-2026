@@ -11,9 +11,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { sampleEvents } from "@/lib/sample-data";
+import { searchPublicEvents } from "@/lib/events";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const events = await searchPublicEvents();
+
   return (
     <main className="min-h-screen">
       <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center px-6 py-10">
@@ -51,7 +53,7 @@ export default function HomePage() {
                 <Button type="button">Search</Button>
               </div>
               <div className="space-y-3">
-                {sampleEvents.map((event) => (
+                {events.map((event) => (
                   <Link
                     key={event.id}
                     href={`/events/${event.slug}`}

@@ -8,15 +8,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getEventById } from "@/lib/sample-data";
+import { requireAdminUser } from "@/lib/auth";
+import { getAdminEventById } from "@/lib/events";
 
 export default async function AdminEventGamePointsPage({
   params,
 }: {
   params: Promise<{ eventId: string }>;
 }) {
+  await requireAdminUser();
   const { eventId } = await params;
-  const event = getEventById(eventId);
+  const event = await getAdminEventById(eventId);
 
   return (
     <main className="min-h-screen bg-slate-50">

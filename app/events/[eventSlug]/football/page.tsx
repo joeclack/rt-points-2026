@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getEventBySlug } from "@/lib/sample-data";
+import { getPublicEventBySlug } from "@/lib/events";
 
 const futureAreas = [
   {
@@ -33,7 +33,7 @@ export default async function EventFootballPage({
   params: Promise<{ eventSlug: string }>;
 }) {
   const { eventSlug } = await params;
-  const event = getEventBySlug(eventSlug);
+  const event = await getPublicEventBySlug(eventSlug);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center px-6 py-10">

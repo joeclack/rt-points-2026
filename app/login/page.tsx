@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { login } from "@/app/auth/actions";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,22 +11,36 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; next?: string }>;
+}) {
+  const { error, next } = await searchParams;
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6 py-10">
       <Card>
         <CardHeader>
           <CardTitle>Admin login</CardTitle>
           <CardDescription>
-            Static Supabase Auth shell. Real authentication is added in Phase 2.
+            Sign in with Supabase Auth to manage your events.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <Input type="email" placeholder="Email address" />
-          <Input type="password" placeholder="Password" />
-          <Button asChild className="w-full">
-            <Link href="/admin/events">Log in</Link>
-          </Button>
+        <CardContent>
+          <form action={login} className="space-y-4">
+            <input name="next" type="hidden" value={next ?? "/admin/events"} />
+            <Input name="email" type="email" placeholder="Email address" required />
+            <Input name="password" type="password" placeholder="Password" required />
+            {error ? (
+              <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                {error}
+              </p>
+            ) : null}
+            <Button className="w-full" type="submit">
+              Log in
+            </Button>
+          </form>
           <p className="text-center text-sm text-slate-600">
             Need an account?{" "}
             <Link className="font-medium text-slate-950" href="/signup">

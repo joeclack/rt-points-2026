@@ -1,4 +1,4 @@
-import { getEventBySlug } from "@/lib/sample-data";
+import { getPublicEventBySlug } from "@/lib/events";
 
 export default async function EventGamePointsPage({
   params,
@@ -6,7 +6,7 @@ export default async function EventGamePointsPage({
   params: Promise<{ eventSlug: string }>;
 }) {
   const { eventSlug } = await params;
-  const event = getEventBySlug(eventSlug);
+  const event = await getPublicEventBySlug(eventSlug);
   const rankedTeams = [...event.teams].sort((a, b) => b.points - a.points);
   const podiumOrder = [rankedTeams[1], rankedTeams[0], rankedTeams[2]].filter(
     Boolean,
