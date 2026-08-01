@@ -35,7 +35,12 @@ export default async function AdminEventsPage() {
             <Card key={event.id}>
               <CardHeader>
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <StatusPill tone="live">{event.visibility}</StatusPill>
+                  <div className="flex items-center gap-2">
+                    <StatusPill tone="live">{event.visibility}</StatusPill>
+                    <StatusPill tone="neutral">
+                      {event.adminRole === "admin" ? "Shared" : "Owner"}
+                    </StatusPill>
+                  </div>
                   <span className="text-sm text-muted-foreground">
                     {event.trackers.length} tracker
                     {event.trackers.length === 1 ? "" : "s"}

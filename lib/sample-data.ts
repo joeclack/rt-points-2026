@@ -18,6 +18,7 @@ export type EventSummary = {
   trackers: Array<"game-points" | "football">;
   teams: Team[];
   viewerAccessCode?: string | null;
+  adminRole?: "owner" | "admin";
 };
 
 export const sampleTeams: Team[] = [

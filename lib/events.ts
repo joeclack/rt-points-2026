@@ -39,7 +39,27 @@ type PublicEventPayload = EventRow & {
   }>;
 };
 
-function mapEvent(row: EventRow, teams: Team[] = []): EventSummary {
+type AdminEventMembershipRow = {
+  role: "owner" | "admin";
+  events: EventRow | null;
+};
+
+export type EventAdminMember = {
+  user_id: string;
+  display_name: string;
+  email: string;
+  role: "owner" | "admin";
+};
+
+export type EventAdminCandidate = Omit<EventAdminMember, "role"> & {
+  has_access: boolean;
+};
+
+function mapEvent(
+  row: EventRow,
+  teams: Team[] = [],
+  adminRole?: "owner" | "admin",
+): EventSummary {
   return {
     id: row.id,
     slug: row.slug,
@@ -53,6 +73,7 @@ function mapEvent(row: EventRow, teams: Team[] = []): EventSummary {
       ...(row.football_enabled ? (["football"] as const) : []),
     ],
     teams,
+    adminRole,
   };
 }
 
@@ -208,18 +229,23 @@ export async function getAdminEvents(userId?: string) {
   }
 
   const { data, error } = await supabase
-    .from("events")
+    .from("event_admins")
     .select(
-      "id,name,slug,description,date_label,location,visibility,game_points_enabled,football_enabled",
+      "role,events!inner(id,name,slug,description,date_label,location,visibility,game_points_enabled,football_enabled)",
     )
-    .eq("owner_id", adminUserId)
+    .eq("user_id", adminUserId)
     .order("created_at", { ascending: false });
 
   if (error || !data) {
     return [];
   }
 
-  return data.map((event) => mapEvent(event));
+  return (data as unknown as AdminEventMembershipRow[]).flatMap(
+    (membership) =>
+      membership.events
+        ? [mapEvent(membership.events, [], membership.role)]
+        : [],
+  );
 }
 
 export async function getAdminEventById(
@@ -246,13 +272,23 @@ export async function getAdminEventById(
     notFound();
   }
 
+  const { data: membership, error: membershipError } = await supabase
+    .from("event_admins")
+    .select("role")
+    .eq("event_id", id)
+    .eq("user_id", adminUserId)
+    .single();
+
+  if (membershipError || !membership) {
+    notFound();
+  }
+
   const eventQuery = supabase
     .from("events")
     .select(
       "id,name,slug,description,date_label,location,visibility,game_points_enabled,football_enabled",
     )
     .eq("id", id)
-    .eq("owner_id", adminUserId)
     .single();
 
   const teamsQuery = options.includeTeams
@@ -284,7 +320,54 @@ export async function getAdminEventById(
   }
 
   return {
-    ...mapEvent(event, (teams ?? []).map((team) => mapTeam(team))),
+    ...mapEvent(
+      event,
+      (teams ?? []).map((team) => mapTeam(team)),
+      membership.role,
+    ),
     viewerAccessCode: accessCode?.access_code ?? null,
   };
+}
+
+export async function getEventAdminMembers(eventId: string) {
+  if (!isSupabaseConfigured()) {
+    return [];
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_event_admin_members", {
+    target_event_id: eventId,
+  });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data as EventAdminMember[];
+}
+
+export async function searchEventAdminCandidates(
+  eventId: string,
+  query: string,
+) {
+  const normalizedQuery = query.trim();
+
+  if (!isSupabaseConfigured() || normalizedQuery.length < 2) {
+    return [];
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc(
+    "search_event_admin_candidates",
+    {
+      target_event_id: eventId,
+      search_query: normalizedQuery,
+    },
+  );
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data as EventAdminCandidate[];
 }

@@ -292,6 +292,35 @@ export type Database = {
         };
         Returns: Json;
       };
+      get_event_admin_members: {
+        Args: {
+          target_event_id: string;
+        };
+        Returns: Array<{
+          user_id: string;
+          display_name: string;
+          email: string;
+          role: "owner" | "admin";
+        }>;
+      };
+      is_event_owner: {
+        Args: {
+          target_event_id: string;
+        };
+        Returns: boolean;
+      };
+      search_event_admin_candidates: {
+        Args: {
+          target_event_id: string;
+          search_query: string;
+        };
+        Returns: Array<{
+          user_id: string;
+          display_name: string;
+          email: string;
+          has_access: boolean;
+        }>;
+      };
       verify_event_viewer_access: {
         Args: {
           event_slug: string;

@@ -24,6 +24,8 @@ Run the SQL in:
 ```text
 supabase/migrations/001_initial_event_auth_schema.sql
 supabase/migrations/002_enable_game_points_realtime.sql
+supabase/migrations/003_event_viewer_access_codes.sql
+supabase/migrations/004_event_admin_collaborators.sql
 ```
 
 The schema creates:
@@ -39,6 +41,10 @@ The schema creates:
 
 The second migration enables Realtime broadcasts for team and score changes.
 The public scoreboard also refreshes every five seconds as a fallback.
+
+The third migration adds optional viewer access codes. The fourth adds
+event-admin collaborators while keeping event ownership and deletion restricted
+to the original owner.
 
 ## Auth Flow
 

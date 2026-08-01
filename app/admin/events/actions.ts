@@ -1,9 +1,28 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createSlug } from "@/lib/slugs";
 import { createClient } from "@/lib/supabase/server";
+
+function eventAdminPath(eventId: string, params: Record<string, string>) {
+  const searchParams = new URLSearchParams(params);
+  return `/admin/events/${eventId}?${searchParams.toString()}`;
+}
+
+async function requireUser() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  return { supabase, user };
+}
 
 export async function createEvent(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
@@ -17,14 +36,7 @@ export async function createEvent(formData: FormData) {
     redirect("/admin/events/new?error=Event%20name%20is%20required");
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const { supabase, user } = await requireUser();
 
   const slug = createSlug(name);
   const { data: event, error } = await supabase
@@ -62,14 +74,7 @@ export async function updateViewerAccessCode(formData: FormData) {
     redirect("/admin/events?error=Missing%20event");
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const { supabase } = await requireUser();
 
   if (!accessCode) {
     const { error } = await supabase
@@ -98,4 +103,59 @@ export async function updateViewerAccessCode(formData: FormData) {
   }
 
   redirect(`/admin/events/${eventId}?message=Access%20code%20saved`);
+}
+
+export async function grantEventAdmin(formData: FormData) {
+  const eventId = String(formData.get("event_id") ?? "").trim();
+  const userId = String(formData.get("user_id") ?? "").trim();
+
+  if (!eventId || !userId) {
+    redirect("/admin/events?error=Missing%20event%20or%20admin");
+  }
+
+  const { supabase } = await requireUser();
+  const { error } = await supabase.from("event_admins").upsert(
+    {
+      event_id: eventId,
+      user_id: userId,
+      role: "admin",
+    },
+    {
+      onConflict: "event_id,user_id",
+      ignoreDuplicates: true,
+    },
+  );
+
+  if (error) {
+    redirect(eventAdminPath(eventId, { error: error.message }));
+  }
+
+  revalidatePath("/admin/events");
+  revalidatePath(`/admin/events/${eventId}`);
+  redirect(eventAdminPath(eventId, { message: "Admin access granted" }));
+}
+
+export async function revokeEventAdmin(formData: FormData) {
+  const eventId = String(formData.get("event_id") ?? "").trim();
+  const userId = String(formData.get("user_id") ?? "").trim();
+
+  if (!eventId || !userId) {
+    redirect("/admin/events?error=Missing%20event%20or%20admin");
+  }
+
+  const { supabase } = await requireUser();
+  const { error } = await supabase
+    .from("event_admins")
+    .delete()
+    .eq("event_id", eventId)
+    .eq("user_id", userId)
+    .eq("role", "admin");
+
+  if (error) {
+    redirect(eventAdminPath(eventId, { error: error.message }));
+  }
+
+  revalidatePath("/admin/events");
+  revalidatePath(`/admin/events/${eventId}`);
+  redirect(eventAdminPath(eventId, { message: "Admin access removed" }));
 }
