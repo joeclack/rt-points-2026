@@ -25,9 +25,8 @@ export default async function AdminEventPage({
   });
 
   return (
-    <main className="min-h-screen bg-slate-50">
-      <section className="mx-auto w-full max-w-6xl px-6 py-8">
-        <header className="mb-8 flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 md:flex-row md:items-end">
+    <div className="mx-auto w-full max-w-6xl">
+      <header className="mb-8 flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 md:flex-row md:items-end">
           <div>
             <StatusPill tone="live">Event admin</StatusPill>
             <h1 className="mt-4 text-3xl font-bold tracking-normal text-slate-950">
@@ -42,9 +41,9 @@ export default async function AdminEventPage({
             <Settings className="h-4 w-4" />
             Event settings
           </Button>
-        </header>
+      </header>
 
-        <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
           <Card>
             <CardHeader>
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-cyan-600 text-white">
@@ -89,8 +88,7 @@ export default async function AdminEventPage({
               </Button>
             </CardContent>
           </Card>
-        </div>
-      </section>
-    </main>
+      </div>
+    </div>
   );
 }

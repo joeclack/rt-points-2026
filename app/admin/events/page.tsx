@@ -1,6 +1,7 @@
 import { CalendarDays, Plus } from "lucide-react";
 import Link from "next/link";
 
+import { AdminEventNav } from "@/components/admin-event-nav";
 import { StatusPill } from "@/components/status-pill";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,18 +20,19 @@ export default async function AdminEventsPage() {
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <section className="mx-auto w-full max-w-6xl px-6 py-8">
+      <section className="mx-auto w-full max-w-6xl px-6 pb-24 pt-6 md:py-8">
+        <AdminEventNav />
         <header className="mb-8 flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 md:flex-row md:items-end">
           <div>
             <StatusPill tone="neutral">Admin</StatusPill>
             <h1 className="mt-4 text-3xl font-bold tracking-normal text-slate-950">
               Your events
             </h1>
-            <p className="mt-2 text-slate-600">
+            <p className="mt-2 hidden text-slate-600 sm:block">
               Create events and manage the trackers inside them.
             </p>
           </div>
-          <Button asChild>
+          <Button asChild className="hidden sm:inline-flex">
             <Link href="/admin/events/new">
               <Plus className="h-4 w-4" />
               Create event
