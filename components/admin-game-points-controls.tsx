@@ -5,9 +5,10 @@ import {
   Pencil,
   Plus,
   Save,
+  SlidersHorizontal,
   Trash2,
 } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import {
   deleteTeam,
@@ -21,6 +22,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import type { Team } from "@/lib/sample-data";
 import { createClient } from "@/lib/supabase/client";
@@ -31,6 +40,15 @@ type AdminGamePointsControlsProps = {
 };
 
 type ScoreMode = "adjust" | "set";
+const defaultQuickAmounts = [1, 5];
+const quickAmountsStorageKey = "rt-points.quickAmounts";
+const customAmountStorageKey = "rt-points.customScoreAmount";
+
+function parsePositiveInteger(value: string) {
+  const parsedValue = Number(value);
+
+  return Number.isInteger(parsedValue) && parsedValue > 0 ? parsedValue : null;
+}
 
 export function AdminGamePointsControls({
   eventId,
@@ -40,6 +58,12 @@ export function AdminGamePointsControls({
   const [pendingTeamId, setPendingTeamId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [actorId, setActorId] = useState<string | null>(null);
+  const [quickAmounts, setQuickAmounts] = useState(defaultQuickAmounts);
+  const [quickAmountInputs, setQuickAmountInputs] = useState(
+    defaultQuickAmounts.map(String),
+  );
+  const [customAmount, setCustomAmount] = useState("3");
 
   const rankedTeams = useMemo(
     () => [...teams].sort((a, b) => b.points - a.points),
@@ -47,6 +71,65 @@ export function AdminGamePointsControls({
   );
   const leadingTeam = rankedTeams.at(0);
   const totalPoints = teams.reduce((sum, team) => sum + team.points, 0);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const storedQuickAmounts = window.localStorage.getItem(quickAmountsStorageKey);
+    const parsedQuickAmounts = storedQuickAmounts
+      ?.split(",")
+      .map((value) => parsePositiveInteger(value.trim()))
+      .filter((value): value is number => value !== null)
+      .slice(0, 2);
+
+    if (parsedQuickAmounts?.length === 2) {
+      setQuickAmounts(parsedQuickAmounts);
+      setQuickAmountInputs(parsedQuickAmounts.map(String));
+    }
+
+    const storedCustomAmount = window.localStorage.getItem(customAmountStorageKey);
+
+    if (storedCustomAmount && parsePositiveInteger(storedCustomAmount)) {
+      setCustomAmount(storedCustomAmount);
+    }
+
+    async function loadActorId() {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (isMounted) {
+        setActorId(user?.id ?? null);
+      }
+    }
+
+    void loadActorId();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  function saveQuickAmounts() {
+    const nextQuickAmounts = quickAmountInputs.map((value) =>
+      parsePositiveInteger(value),
+    );
+
+    if (nextQuickAmounts.some((value) => value === null)) {
+      setError("Quick action amounts must be whole numbers above zero");
+      return;
+    }
+
+    const numericQuickAmounts = nextQuickAmounts as number[];
+
+    setQuickAmounts(numericQuickAmounts);
+    setError(null);
+    window.localStorage.setItem(
+      quickAmountsStorageKey,
+      numericQuickAmounts.join(","),
+    );
+  }
 
   async function updateScore(teamId: string, mode: ScoreMode, value: number) {
     const currentTeam = teams.find((team) => team.id === teamId);
@@ -67,7 +150,6 @@ export function AdminGamePointsControls({
 
     setPendingTeamId(teamId);
     setError(null);
-    setNotice(null);
     setTeams((currentTeams) =>
       currentTeams.map((team) =>
         team.id === teamId ? { ...team, points: nextPoints } : team,
@@ -76,11 +158,8 @@ export function AdminGamePointsControls({
 
     try {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
 
-      if (!user) {
+      if (!actorId) {
         throw new Error("You need to log in again");
       }
 
@@ -99,7 +178,7 @@ export function AdminGamePointsControls({
       const { error: auditError } = await supabase.from("score_events").insert({
         event_id: eventId,
         team_id: teamId,
-        actor_id: user.id,
+        actor_id: actorId,
         points_delta: pointsDelta,
         points_after: nextPoints,
         reason: mode === "adjust" ? "Quick score change" : "Set exact score",
@@ -109,7 +188,6 @@ export function AdminGamePointsControls({
         throw auditError;
       }
 
-      setNotice("Score updated");
     } catch (caughtError) {
       setTeams((currentTeams) =>
         currentTeams.map((team) =>
@@ -135,6 +213,18 @@ export function AdminGamePointsControls({
     event.currentTarget.reset();
   }
 
+  function applyCustomAmount(teamId: string, direction: 1 | -1) {
+    const amount = parsePositiveInteger(customAmount);
+
+    if (!amount) {
+      setError("Custom amount must be a whole number above zero");
+      return;
+    }
+
+    window.localStorage.setItem(customAmountStorageKey, customAmount);
+    void updateScore(teamId, "adjust", amount * direction);
+  }
+
   return (
     <div className="min-w-0">
       {notice ? (
@@ -148,7 +238,8 @@ export function AdminGamePointsControls({
         </p>
       ) : null}
 
-      <div className="mb-6 grid gap-4 md:grid-cols-3">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start">
+        <div className="grid flex-1 gap-4 md:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle className="text-base text-slate-600">Teams</CardTitle>
@@ -177,6 +268,51 @@ export function AdminGamePointsControls({
             </p>
           </CardContent>
         </Card>
+        </div>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button className="lg:mt-1" type="button" variant="outline">
+              <SlidersHorizontal className="h-4 w-4" />
+              Quick actions
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Quick action amounts</DialogTitle>
+              <DialogDescription>
+                Choose the two amounts shown as add and subtract buttons on every
+                team card.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {quickAmountInputs.map((amount, index) => (
+                  <label
+                    key={`quick-amount-${index + 1}`}
+                    className="block text-sm font-medium text-slate-700"
+                  >
+                    Amount {index + 1}
+                    <Input
+                      className="mt-1"
+                      min={1}
+                      type="number"
+                      value={amount}
+                      onChange={(event) => {
+                        const nextInputs = [...quickAmountInputs];
+                        nextInputs[index] = event.target.value;
+                        setQuickAmountInputs(nextInputs);
+                      }}
+                    />
+                  </label>
+                ))}
+              </div>
+              <Button className="w-full" type="button" onClick={saveQuickAmounts}>
+                <Save className="h-4 w-4" />
+                Save quick actions
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
@@ -224,35 +360,55 @@ export function AdminGamePointsControls({
                 </div>
 
                 <div className="grid grid-cols-4 gap-2">
+                  {[...quickAmounts].reverse().map((amount) => (
+                    <Button
+                      disabled={isPending}
+                      key={`subtract-${amount}`}
+                      onClick={() => void updateScore(team.id, "adjust", -amount)}
+                      type="button"
+                      variant="outline"
+                    >
+                      <Minus className="h-4 w-4" />
+                      {amount}
+                    </Button>
+                  ))}
+                  {quickAmounts.map((amount) => (
+                    <Button
+                      disabled={isPending}
+                      key={`add-${amount}`}
+                      onClick={() => void updateScore(team.id, "adjust", amount)}
+                      type="button"
+                    >
+                      <Plus className="h-4 w-4" />
+                      {amount}
+                    </Button>
+                  ))}
+                </div>
+
+                <div className="grid gap-2 sm:grid-cols-[auto_1fr_auto]">
                   <Button
                     disabled={isPending}
-                    onClick={() => void updateScore(team.id, "adjust", -5)}
+                    onClick={() => applyCustomAmount(team.id, -1)}
                     type="button"
                     variant="outline"
                   >
-                    <Minus className="h-4 w-4" />5
+                    <Minus className="h-4 w-4" />
+                    Custom
                   </Button>
+                  <Input
+                    min={1}
+                    type="number"
+                    value={customAmount}
+                    aria-label="Custom score amount"
+                    onChange={(event) => setCustomAmount(event.target.value)}
+                  />
                   <Button
                     disabled={isPending}
-                    onClick={() => void updateScore(team.id, "adjust", -1)}
-                    type="button"
-                    variant="outline"
-                  >
-                    <Minus className="h-4 w-4" />1
-                  </Button>
-                  <Button
-                    disabled={isPending}
-                    onClick={() => void updateScore(team.id, "adjust", 1)}
+                    onClick={() => applyCustomAmount(team.id, 1)}
                     type="button"
                   >
-                    <Plus className="h-4 w-4" />1
-                  </Button>
-                  <Button
-                    disabled={isPending}
-                    onClick={() => void updateScore(team.id, "adjust", 5)}
-                    type="button"
-                  >
-                    <Plus className="h-4 w-4" />5
+                    <Plus className="h-4 w-4" />
+                    Custom
                   </Button>
                 </div>
 
@@ -272,12 +428,22 @@ export function AdminGamePointsControls({
                   </Button>
                 </form>
 
-                <details className="rounded-md border border-slate-200 bg-white">
-                  <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-slate-700">
-                    <Pencil className="h-4 w-4" />
-                    Team settings
-                  </summary>
-                  <div className="space-y-4 border-t border-slate-200 p-4">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button className="w-full" type="button" variant="outline">
+                      <Pencil className="h-4 w-4" />
+                      Team settings
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{team.name} settings</DialogTitle>
+                      <DialogDescription>
+                        Update this team&apos;s display details or remove it from
+                        the event.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-5">
                     <form action={updateTeam} className="space-y-3">
                       <input name="event_id" type="hidden" value={eventId} />
                       <input name="team_id" type="hidden" value={team.id} />
@@ -316,7 +482,10 @@ export function AdminGamePointsControls({
                       </Button>
                     </form>
 
-                    <form action={deleteTeam} className="space-y-3">
+                    <form
+                      action={deleteTeam}
+                      className="space-y-3 border-t border-slate-200 pt-5"
+                    >
                       <input name="event_id" type="hidden" value={eventId} />
                       <input name="team_id" type="hidden" value={team.id} />
                       <Input
@@ -330,7 +499,8 @@ export function AdminGamePointsControls({
                       </Button>
                     </form>
                   </div>
-                </details>
+                  </DialogContent>
+                </Dialog>
               </CardContent>
             </Card>
           );

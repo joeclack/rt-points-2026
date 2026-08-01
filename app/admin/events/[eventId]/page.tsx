@@ -18,9 +18,11 @@ export default async function AdminEventPage({
 }: {
   params: Promise<{ eventId: string }>;
 }) {
-  await requireAdminUser();
+  const user = await requireAdminUser();
   const { eventId } = await params;
-  const event = await getAdminEventById(eventId);
+  const event = await getAdminEventById(eventId, user?.id, {
+    includeTeams: false,
+  });
 
   return (
     <main className="min-h-screen bg-slate-50">

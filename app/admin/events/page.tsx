@@ -14,8 +14,8 @@ import { requireAdminUser } from "@/lib/auth";
 import { getAdminEvents } from "@/lib/events";
 
 export default async function AdminEventsPage() {
-  await requireAdminUser();
-  const events = await getAdminEvents();
+  const user = await requireAdminUser();
+  const events = await getAdminEvents(user?.id);
 
   return (
     <main className="min-h-screen bg-slate-50">

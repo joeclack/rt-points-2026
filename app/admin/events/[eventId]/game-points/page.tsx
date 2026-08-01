@@ -31,10 +31,12 @@ export default async function AdminEventGamePointsPage({
   params: Promise<{ eventId: string }>;
   searchParams: Promise<{ error?: string; message?: string }>;
 }) {
-  await requireAdminUser();
+  const user = await requireAdminUser();
   const { eventId } = await params;
   const { error, message } = await searchParams;
-  const event = await getAdminEventById(eventId);
+  const event = await getAdminEventById(eventId, user?.id, {
+    includeTeams: true,
+  });
 
   return (
     <main className="min-h-screen bg-slate-50">

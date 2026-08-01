@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+
 import type { EventSummary, Team } from "@/lib/sample-data";
 import { isSupabaseConfigured } from "@/lib/auth";
 import { getEventById, getEventBySlug, sampleEvents } from "@/lib/sample-data";
@@ -103,17 +105,23 @@ export async function getPublicEventBySlug(slug: string) {
   return mapEvent(event, (teams ?? []).map((team) => mapTeam(team)));
 }
 
-export async function getAdminEvents() {
+export async function getAdminEvents(userId?: string) {
   if (!isSupabaseConfigured()) {
     return sampleEvents;
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let adminUserId = userId;
 
-  if (!user) {
+  if (!adminUserId) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    adminUserId = user?.id;
+  }
+
+  if (!adminUserId) {
     return [];
   }
 
@@ -122,7 +130,7 @@ export async function getAdminEvents() {
     .select(
       "id,name,slug,description,date_label,location,visibility,game_points_enabled,football_enabled",
     )
-    .eq("owner_id", user.id)
+    .eq("owner_id", adminUserId)
     .order("created_at", { ascending: false });
 
   if (error || !data) {
@@ -132,38 +140,55 @@ export async function getAdminEvents() {
   return data.map((event) => mapEvent(event));
 }
 
-export async function getAdminEventById(id: string) {
+export async function getAdminEventById(
+  id: string,
+  userId?: string,
+  options: { includeTeams?: boolean } = {},
+) {
   if (!isSupabaseConfigured()) {
     return getEventById(id);
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let adminUserId = userId;
 
-  if (!user) {
-    return getEventById(id);
+  if (!adminUserId) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    adminUserId = user?.id;
   }
 
-  const { data: event, error } = await supabase
+  if (!adminUserId) {
+    notFound();
+  }
+
+  const eventQuery = supabase
     .from("events")
     .select(
       "id,name,slug,description,date_label,location,visibility,game_points_enabled,football_enabled",
     )
     .eq("id", id)
-    .eq("owner_id", user.id)
+    .eq("owner_id", adminUserId)
     .single();
 
-  if (error || !event) {
-    return getEventById(id);
-  }
+  const teamsQuery = options.includeTeams
+    ? supabase
+        .from("teams")
+        .select("id,name,colour,badge_text,badge_url,game_points_scores(points)")
+        .eq("event_id", id)
+        .order("created_at")
+    : Promise.resolve({ data: null });
 
-  const { data: teams } = await supabase
-    .from("teams")
-    .select("id,name,colour,badge_text,badge_url,game_points_scores(points)")
-    .eq("event_id", event.id)
-    .order("created_at");
+  const [{ data: event, error }, { data: teams }] = await Promise.all([
+    eventQuery,
+    teamsQuery,
+  ]);
+
+  if (error || !event) {
+    notFound();
+  }
 
   return mapEvent(event, (teams ?? []).map((team) => mapTeam(team)));
 }
