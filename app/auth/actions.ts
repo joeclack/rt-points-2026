@@ -28,7 +28,7 @@ export async function signup(formData: FormData) {
   const password = String(formData.get("password") ?? "");
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({
+  const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -42,14 +42,14 @@ export async function signup(formData: FormData) {
     redirect(`/signup?error=${encodeURIComponent(error.message)}`);
   }
 
-  if (data.user) {
-    await supabase.from("profiles").upsert({
-      id: data.user.id,
-      display_name: displayName || null,
-    });
-  }
+  await supabase.auth.signOut();
 
-  redirect("/admin/events");
+  const searchParams = new URLSearchParams({
+    message: "Check your email to confirm your account, then log in.",
+    email,
+  });
+
+  redirect(`/login?${searchParams.toString()}`);
 }
 
 export async function logout() {

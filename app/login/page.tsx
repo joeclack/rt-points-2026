@@ -13,9 +13,14 @@ import { Input } from "@/components/ui/input";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; next?: string }>;
+  searchParams: Promise<{
+    email?: string;
+    error?: string;
+    message?: string;
+    next?: string;
+  }>;
 }) {
-  const { error, next } = await searchParams;
+  const { email, error, message, next } = await searchParams;
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6 py-10">
@@ -26,8 +31,19 @@ export default async function LoginPage({
         <CardContent>
           <form action={login} className="space-y-4">
             <input name="next" type="hidden" value={next ?? "/admin/events"} />
-            <Input name="email" type="email" placeholder="Email address" required />
+            <Input
+              defaultValue={email}
+              name="email"
+              type="email"
+              placeholder="Email address"
+              required
+            />
             <Input name="password" type="password" placeholder="Password" required />
+            {message ? (
+              <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">
+                {message}
+              </p>
+            ) : null}
             {error ? (
               <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
                 {error}
