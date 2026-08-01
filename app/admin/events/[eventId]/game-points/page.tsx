@@ -1,5 +1,4 @@
 import {
-  BadgePlus,
   Plus,
   RotateCcw,
 } from "lucide-react";
@@ -47,7 +46,7 @@ export default async function AdminEventGamePointsPage({
             <h1 className="mt-4 text-3xl font-bold tracking-normal text-slate-950">
               {event.name}
             </h1>
-            <p className="mt-2 text-slate-600">
+            <p className="mt-2 hidden text-slate-600 sm:block">
               Create teams, adjust live scores, and manage the audience
               scoreboard for this event.
             </p>
@@ -55,7 +54,7 @@ export default async function AdminEventGamePointsPage({
           <div className="flex flex-wrap gap-2">
             <Dialog>
               <DialogTrigger asChild>
-                <Button>
+                <Button className="hidden sm:inline-flex">
                   <Plus className="h-4 w-4" />
                   Add team
                 </Button>
@@ -116,7 +115,7 @@ export default async function AdminEventGamePointsPage({
             </Dialog>
             <Dialog>
               <DialogTrigger asChild>
-                <Button variant="secondary">
+                <Button className="hidden sm:inline-flex" variant="secondary">
                   <RotateCcw className="h-4 w-4" />
                   Reset scores
                 </Button>

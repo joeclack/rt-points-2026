@@ -8,7 +8,7 @@ import {
   SlidersHorizontal,
   Trash2,
 } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   deleteTeam,
@@ -204,25 +204,32 @@ export function AdminGamePointsControls({
     }
   }
 
-  function handleSetScore(event: FormEvent<HTMLFormElement>, teamId: string) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const points = Number(String(formData.get("points") ?? ""));
-
-    void updateScore(teamId, "set", points);
-    event.currentTarget.reset();
-  }
-
-  function applyCustomAmount(teamId: string, direction: 1 | -1) {
+  function readCustomAmount() {
     const amount = parsePositiveInteger(customAmount);
 
     if (!amount) {
       setError("Custom amount must be a whole number above zero");
-      return;
+      return null;
     }
 
     window.localStorage.setItem(customAmountStorageKey, customAmount);
-    void updateScore(teamId, "adjust", amount * direction);
+    return amount;
+  }
+
+  function applyCustomAmount(teamId: string) {
+    const amount = readCustomAmount();
+
+    if (amount) {
+      void updateScore(teamId, "adjust", amount);
+    }
+  }
+
+  function setCustomScore(teamId: string) {
+    const amount = readCustomAmount();
+
+    if (amount) {
+      void updateScore(teamId, "set", amount);
+    }
   }
 
   return (
@@ -239,31 +246,39 @@ export function AdminGamePointsControls({
       ) : null}
 
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start">
-        <div className="grid flex-1 gap-4 md:grid-cols-3">
+        <div className="grid flex-1 grid-cols-3 gap-2 md:gap-4">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base text-slate-600">Teams</CardTitle>
+          <CardHeader className="p-3 pb-1 md:p-6 md:pb-0">
+            <CardTitle className="text-xs text-slate-600 md:text-base">
+              Teams
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold text-slate-950">{teams.length}</p>
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <p className="text-2xl font-bold text-slate-950 md:text-4xl">
+              {teams.length}
+            </p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base text-slate-600">
+          <CardHeader className="p-3 pb-1 md:p-6 md:pb-0">
+            <CardTitle className="text-xs text-slate-600 md:text-base">
               Total points
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold text-slate-950">{totalPoints}</p>
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <p className="text-2xl font-bold text-slate-950 md:text-4xl">
+              {totalPoints}
+            </p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base text-slate-600">Leader</CardTitle>
+          <CardHeader className="p-3 pb-1 md:p-6 md:pb-0">
+            <CardTitle className="text-xs text-slate-600 md:text-base">
+              Leader
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="truncate text-4xl font-bold text-slate-950">
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <p className="truncate text-xl font-bold text-slate-950 md:text-4xl">
               {leadingTeam?.name ?? "None"}
             </p>
           </CardContent>
@@ -315,7 +330,7 @@ export function AdminGamePointsControls({
         </Dialog>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid gap-3 xl:grid-cols-2 xl:gap-4">
         {teams.length === 0 ? (
           <Card className="xl:col-span-2">
             <CardContent className="py-12 text-center">
@@ -334,23 +349,35 @@ export function AdminGamePointsControls({
 
           return (
             <Card key={team.id}>
-              <CardHeader className="flex flex-row items-start justify-between space-y-0">
-                <div>
-                  <CardTitle className="text-xl">{team.name}</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-3 sm:items-start sm:p-6">
+                <div className="min-w-0">
+                  <CardTitle className="truncate text-base sm:text-xl">
+                    {team.name}
+                  </CardTitle>
                   <p className="mt-1 text-sm text-muted-foreground">
                     Rank {index + 1}
                   </p>
                 </div>
-                <TeamBadge
-                  badge={team.badge}
-                  badgeUrl={team.badgeUrl}
-                  className="h-12 w-12 text-lg"
-                  colour={team.colour}
-                  name={team.name}
-                />
+                <div className="flex shrink-0 items-center gap-3">
+                  <div className="text-right sm:hidden">
+                    <p className="text-[0.65rem] font-semibold uppercase text-slate-500">
+                      Score
+                    </p>
+                    <p className="text-3xl font-bold leading-none text-slate-950">
+                      {team.points}
+                    </p>
+                  </div>
+                  <TeamBadge
+                    badge={team.badge}
+                    badgeUrl={team.badgeUrl}
+                    className="h-10 w-10 text-base sm:h-12 sm:w-12 sm:text-lg"
+                    colour={team.colour}
+                    name={team.name}
+                  />
+                </div>
               </CardHeader>
-              <CardContent className="space-y-5">
-                <div className="rounded-md bg-slate-100 p-5 text-center">
+              <CardContent className="space-y-3 px-4 pb-4 pt-0 sm:space-y-5 sm:p-6 sm:pt-0">
+                <div className="hidden rounded-md bg-slate-100 p-5 text-center sm:block">
                   <div className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
                     Current score
                   </div>
@@ -359,9 +386,10 @@ export function AdminGamePointsControls({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
                   {[...quickAmounts].reverse().map((amount) => (
                     <Button
+                      className="h-9 px-2 text-xs sm:h-10 sm:text-sm"
                       disabled={isPending}
                       key={`subtract-${amount}`}
                       onClick={() => void updateScore(team.id, "adjust", -amount)}
@@ -374,6 +402,7 @@ export function AdminGamePointsControls({
                   ))}
                   {quickAmounts.map((amount) => (
                     <Button
+                      className="h-9 px-2 text-xs sm:h-10 sm:text-sm"
                       disabled={isPending}
                       key={`add-${amount}`}
                       onClick={() => void updateScore(team.id, "adjust", amount)}
@@ -385,52 +414,44 @@ export function AdminGamePointsControls({
                   ))}
                 </div>
 
-                <div className="grid gap-2 sm:grid-cols-[auto_1fr_auto]">
-                  <Button
-                    disabled={isPending}
-                    onClick={() => applyCustomAmount(team.id, -1)}
-                    type="button"
-                    variant="outline"
-                  >
-                    <Minus className="h-4 w-4" />
-                    Custom
-                  </Button>
+                <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2">
                   <Input
+                    className="h-9 sm:h-10"
                     min={1}
+                    placeholder="Custom"
                     type="number"
                     value={customAmount}
                     aria-label="Custom score amount"
                     onChange={(event) => setCustomAmount(event.target.value)}
                   />
                   <Button
+                    className="h-9 px-3 text-xs sm:h-10 sm:text-sm"
                     disabled={isPending}
-                    onClick={() => applyCustomAmount(team.id, 1)}
+                    onClick={() => applyCustomAmount(team.id)}
                     type="button"
                   >
                     <Plus className="h-4 w-4" />
-                    Custom
+                    Add
                   </Button>
-                </div>
-
-                <form
-                  className="grid gap-2 sm:grid-cols-[1fr_auto]"
-                  onSubmit={(event) => handleSetScore(event, team.id)}
-                >
-                  <Input
-                    min={0}
-                    name="points"
-                    placeholder="Exact score"
-                    type="number"
-                  />
-                  <Button disabled={isPending} type="submit" variant="outline">
+                  <Button
+                    className="h-9 px-3 text-xs sm:h-10 sm:text-sm"
+                    disabled={isPending}
+                    onClick={() => setCustomScore(team.id)}
+                    type="button"
+                    variant="outline"
+                  >
                     <Save className="h-4 w-4" />
                     Set
                   </Button>
-                </form>
+                </div>
 
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button className="w-full" type="button" variant="outline">
+                    <Button
+                      className="hidden h-9 w-full text-xs sm:inline-flex sm:h-10 sm:text-sm"
+                      type="button"
+                      variant="outline"
+                    >
                       <Pencil className="h-4 w-4" />
                       Team settings
                     </Button>
