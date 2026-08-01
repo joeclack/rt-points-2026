@@ -39,16 +39,12 @@ export default async function AdminEventGamePointsPage({
   return (
     <>
       <header className="mb-6 flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 lg:flex-row lg:items-end">
-          <div>
-            <StatusPill tone="live">Game Points Admin</StatusPill>
-            <h1 className="mt-4 text-3xl font-bold tracking-normal text-slate-950">
-              {event.name}
-            </h1>
-            <p className="mt-2 hidden text-slate-600 sm:block">
-              Create teams, adjust live scores, and manage the audience
-              scoreboard for this event.
-            </p>
-          </div>
+        <div>
+          <StatusPill tone="live">Game Points Admin</StatusPill>
+          <h1 className="mt-4 text-3xl font-bold tracking-normal text-slate-950">
+            {event.name}
+          </h1>
+        </div>
           <div className="flex flex-wrap gap-2">
             <Dialog>
               <DialogTrigger asChild>

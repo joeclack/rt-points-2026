@@ -1,4 +1,4 @@
-import { CalendarDays, Plus } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import Link from "next/link";
 
 import { AdminEventNav } from "@/components/admin-event-nav";
@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -28,16 +27,7 @@ export default async function AdminEventsPage() {
             <h1 className="mt-4 text-3xl font-bold tracking-normal text-slate-950">
               Your events
             </h1>
-            <p className="mt-2 hidden text-slate-600 sm:block">
-              Create events and manage the trackers inside them.
-            </p>
           </div>
-          <Button asChild className="hidden sm:inline-flex">
-            <Link href="/admin/events/new">
-              <Plus className="h-4 w-4" />
-              Create event
-            </Link>
-          </Button>
         </header>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -52,7 +42,6 @@ export default async function AdminEventsPage() {
                   </span>
                 </div>
                 <CardTitle>{event.name}</CardTitle>
-                <CardDescription>{event.description}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="flex items-center gap-2 text-sm text-slate-500">

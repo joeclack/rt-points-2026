@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -23,9 +22,6 @@ export default async function NewEventPage({
       <Card>
         <CardHeader>
           <CardTitle>Create event</CardTitle>
-          <CardDescription>
-            Create an event such as The Jesus Generation, then add trackers.
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <form action={createEvent} className="space-y-4">

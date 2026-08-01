@@ -41,7 +41,7 @@ export function GamePointsScoreboard({
 }: GamePointsScoreboardProps) {
   const [teams, setTeams] = useState(initialTeams);
   const [lastUpdatedTeamId, setLastUpdatedTeamId] = useState<string | null>(null);
-  const [connectionState, setConnectionState] = useState("Connecting");
+  const [, setConnectionState] = useState("Connecting");
 
   const rankedTeams = useMemo(
     () => [...teams].sort((a, b) => b.points - a.points),
@@ -154,17 +154,11 @@ export function GamePointsScoreboard({
 
   return (
     <section className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 py-8">
-      <header className="flex items-center justify-between border-b border-white/10 pb-5">
+      <header className="border-b border-white/10 pb-5">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-200">
             {eventName}
           </p>
-          <h1 className="mt-2 text-4xl font-bold tracking-normal">
-            Game Points
-          </h1>
-        </div>
-        <div className="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-4 py-2 text-sm font-semibold text-emerald-100">
-          {connectionState === "Live" ? "Live display" : connectionState}
         </div>
       </header>
 

@@ -1,4 +1,4 @@
-import { Monitor, Settings, ShieldCheck, Trophy } from "lucide-react";
+import { Monitor, ShieldCheck, Trophy } from "lucide-react";
 import Link from "next/link";
 
 import { StatusPill } from "@/components/status-pill";
@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -27,20 +26,12 @@ export default async function AdminEventPage({
   return (
     <div className="mx-auto w-full max-w-6xl">
       <header className="mb-8 flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 md:flex-row md:items-end">
-          <div>
-            <StatusPill tone="live">Event admin</StatusPill>
-            <h1 className="mt-4 text-3xl font-bold tracking-normal text-slate-950">
-              {event.name}
-            </h1>
-            <p className="mt-2 text-slate-600">
-              Manage the trackers, teams, visibility, and public pages for this
-              event.
-            </p>
-          </div>
-          <Button variant="outline">
-            <Settings className="h-4 w-4" />
-            Event settings
-          </Button>
+        <div>
+          <StatusPill tone="live">Event admin</StatusPill>
+          <h1 className="mt-4 text-3xl font-bold tracking-normal text-slate-950">
+            {event.name}
+          </h1>
+        </div>
       </header>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -50,9 +41,6 @@ export default async function AdminEventPage({
                 <Trophy className="h-6 w-6" />
               </div>
               <CardTitle>Game Points</CardTitle>
-              <CardDescription>
-                Manage teams, score controls, colours, badges, and standings.
-              </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-2 sm:grid-cols-2">
               <Button asChild>
@@ -75,10 +63,6 @@ export default async function AdminEventPage({
                 <ShieldCheck className="h-6 w-6" />
               </div>
               <CardTitle>Football</CardTitle>
-              <CardDescription>
-                Future match tracking for fixtures, officials, live scores, and
-                tables.
-              </CardDescription>
             </CardHeader>
             <CardContent>
               <Button asChild variant="outline" className="w-full">
