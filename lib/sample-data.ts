@@ -3,6 +3,7 @@ export type Team = {
   name: string;
   colour: string;
   badge: string;
+  badgeUrl?: string | null;
   points: number;
 };
 

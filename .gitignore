@@ -1,9 +1,11 @@
 .next
 node_modules
+node_modules.*
 out
 dist
 .env
 .env*.local
 *.tsbuildinfo
+.DS_Store
 vercel
 .vercel

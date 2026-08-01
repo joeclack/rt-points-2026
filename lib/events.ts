@@ -49,6 +49,7 @@ function mapTeam(row: TeamScoreRow): Team {
     name: row.name,
     colour: row.colour,
     badge: row.badge_text ?? row.name.charAt(0).toUpperCase(),
+    badgeUrl: row.badge_url,
     points: row.game_points_scores.at(0)?.points ?? 0,
   };
 }

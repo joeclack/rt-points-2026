@@ -2,6 +2,7 @@ import { ListOrdered, ShieldCheck, Trophy } from "lucide-react";
 import Link from "next/link";
 
 import { StatusPill } from "@/components/status-pill";
+import { TeamBadge } from "@/components/team-badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -84,12 +85,13 @@ export default async function EventDetailPage({
               className="flex items-center justify-between rounded-md bg-slate-50 px-4 py-3"
             >
               <span className="font-medium text-slate-800">{team.name}</span>
-              <span
-                className="flex h-8 w-8 items-center justify-center rounded-md text-sm font-bold text-white"
-                style={{ backgroundColor: team.colour }}
-              >
-                {team.badge}
-              </span>
+              <TeamBadge
+                badge={team.badge}
+                badgeUrl={team.badgeUrl}
+                className="h-8 w-8 text-sm"
+                colour={team.colour}
+                name={team.name}
+              />
             </div>
           ))}
         </div>
