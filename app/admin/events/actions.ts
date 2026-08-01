@@ -53,3 +53,49 @@ export async function createEvent(formData: FormData) {
 
   redirect(`/admin/events/${event.id}`);
 }
+
+export async function updateViewerAccessCode(formData: FormData) {
+  const eventId = String(formData.get("event_id") ?? "");
+  const accessCode = String(formData.get("access_code") ?? "").trim();
+
+  if (!eventId) {
+    redirect("/admin/events?error=Missing%20event");
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  if (!accessCode) {
+    const { error } = await supabase
+      .from("event_viewer_access_codes")
+      .delete()
+      .eq("event_id", eventId);
+
+    if (error) {
+      redirect(
+        `/admin/events/${eventId}?error=${encodeURIComponent(error.message)}`,
+      );
+    }
+
+    redirect(`/admin/events/${eventId}?message=Access%20code%20cleared`);
+  }
+
+  const { error } = await supabase.from("event_viewer_access_codes").upsert({
+    event_id: eventId,
+    access_code: accessCode,
+  });
+
+  if (error) {
+    redirect(
+      `/admin/events/${eventId}?error=${encodeURIComponent(error.message)}`,
+    );
+  }
+
+  redirect(`/admin/events/${eventId}?message=Access%20code%20saved`);
+}

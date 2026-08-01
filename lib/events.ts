@@ -28,6 +28,17 @@ type TeamScoreRow = {
   }>;
 };
 
+type PublicEventPayload = EventRow & {
+  teams: Array<{
+    id: string;
+    name: string;
+    colour: string;
+    badge_text: string | null;
+    badge_url: string | null;
+    points: number;
+  }>;
+};
+
 function mapEvent(row: EventRow, teams: Team[] = []): EventSummary {
   return {
     id: row.id,
@@ -56,6 +67,20 @@ function mapTeam(row: TeamScoreRow): Team {
   };
 }
 
+function mapPublicEventPayload(payload: PublicEventPayload): EventSummary {
+  return mapEvent(
+    payload,
+    payload.teams.map((team) => ({
+      id: team.id,
+      name: team.name,
+      colour: team.colour,
+      badge: team.badge_text ?? team.name.charAt(0).toUpperCase(),
+      badgeUrl: team.badge_url,
+      points: team.points,
+    })),
+  );
+}
+
 export async function searchPublicEvents() {
   if (!isSupabaseConfigured()) {
     return sampleEvents;
@@ -77,9 +102,45 @@ export async function searchPublicEvents() {
   return data.map((event) => mapEvent(event));
 }
 
-export async function getPublicEventBySlug(slug: string) {
+export async function getPublicEventBySlug(slug: string, accessCode = "") {
   if (!isSupabaseConfigured()) {
     return getEventBySlug(slug);
+  }
+
+  const supabase = await createClient();
+  const { data: event, error } = await supabase.rpc(
+    "get_public_event_for_viewer",
+    {
+      event_slug: slug,
+      submitted_code: accessCode,
+    },
+  );
+
+  if (error || !event) {
+    return getEventBySlug(slug);
+  }
+
+  return mapPublicEventPayload(event as PublicEventPayload);
+}
+
+export async function getPublicEventShellBySlug(slug: string) {
+  if (!isSupabaseConfigured()) {
+    const event = getEventBySlug(slug);
+
+    return mapEvent(
+      {
+        id: event.id,
+        name: event.name,
+        slug: event.slug,
+        description: event.description,
+        date_label: event.dateLabel,
+        location: event.location,
+        visibility: event.visibility,
+        game_points_enabled: event.trackers.includes("game-points"),
+        football_enabled: event.trackers.includes("football"),
+      },
+      [],
+    );
   }
 
   const supabase = await createClient();
@@ -96,13 +157,34 @@ export async function getPublicEventBySlug(slug: string) {
     return getEventBySlug(slug);
   }
 
-  const { data: teams } = await supabase
-    .from("teams")
-    .select("id,name,colour,badge_text,badge_url,game_points_scores(points)")
-    .eq("event_id", event.id)
-    .order("created_at");
+  return mapEvent(event);
+}
 
-  return mapEvent(event, (teams ?? []).map((team) => mapTeam(team)));
+export async function eventRequiresViewerAccess(slug: string) {
+  if (!isSupabaseConfigured()) {
+    return false;
+  }
+
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("event_requires_viewer_access", {
+    event_slug: slug,
+  });
+
+  return Boolean(data);
+}
+
+export async function verifyViewerAccess(slug: string, code: string) {
+  if (!isSupabaseConfigured()) {
+    return true;
+  }
+
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("verify_event_viewer_access", {
+    event_slug: slug,
+    submitted_code: code,
+  });
+
+  return Boolean(data);
 }
 
 export async function getAdminEvents(userId?: string) {
@@ -181,14 +263,28 @@ export async function getAdminEventById(
         .order("created_at")
     : Promise.resolve({ data: null });
 
-  const [{ data: event, error }, { data: teams }] = await Promise.all([
+  const accessCodeQuery = supabase
+    .from("event_viewer_access_codes")
+    .select("access_code")
+    .eq("event_id", id)
+    .maybeSingle();
+
+  const [
+    { data: event, error },
+    { data: teams },
+    { data: accessCode },
+  ] = await Promise.all([
     eventQuery,
     teamsQuery,
+    accessCodeQuery,
   ]);
 
   if (error || !event) {
     notFound();
   }
 
-  return mapEvent(event, (teams ?? []).map((team) => mapTeam(team)));
+  return {
+    ...mapEvent(event, (teams ?? []).map((team) => mapTeam(team))),
+    viewerAccessCode: accessCode?.access_code ?? null,
+  };
 }

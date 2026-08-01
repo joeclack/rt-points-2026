@@ -17,6 +17,7 @@ export type EventSummary = {
   visibility: "public" | "private";
   trackers: Array<"game-points" | "football">;
   teams: Team[];
+  viewerAccessCode?: string | null;
 };
 
 export const sampleTeams: Team[] = [

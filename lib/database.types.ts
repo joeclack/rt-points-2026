@@ -86,6 +86,35 @@ export type Database = {
           },
         ];
       };
+      event_viewer_access_codes: {
+        Row: {
+          event_id: string;
+          access_code: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          event_id: string;
+          access_code: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          event_id?: string;
+          access_code?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "event_viewer_access_codes_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: true;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       event_admins: {
         Row: {
           event_id: string;
@@ -249,7 +278,28 @@ export type Database = {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      event_requires_viewer_access: {
+        Args: {
+          event_slug: string;
+        };
+        Returns: boolean;
+      };
+      get_public_event_for_viewer: {
+        Args: {
+          event_slug: string;
+          submitted_code?: string;
+        };
+        Returns: Json;
+      };
+      verify_event_viewer_access: {
+        Args: {
+          event_slug: string;
+          submitted_code: string;
+        };
+        Returns: boolean;
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

@@ -1,36 +1,60 @@
 import { ListOrdered, ShieldCheck, Trophy } from "lucide-react";
 import Link from "next/link";
 
-import { StatusPill } from "@/components/status-pill";
+import { EventAccessCodeForm } from "@/components/event-access-code-form";
 import { TeamBadge } from "@/components/team-badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getPublicEventBySlug } from "@/lib/events";
+import {
+  eventRequiresViewerAccess,
+  getPublicEventBySlug,
+  getPublicEventShellBySlug,
+  verifyViewerAccess,
+} from "@/lib/events";
+import { getViewerAccessCode } from "@/lib/viewer-access";
 
 export default async function EventDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ eventSlug: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { eventSlug } = await params;
-  const event = await getPublicEventBySlug(eventSlug);
+  const { error } = await searchParams;
+  const shellEvent = await getPublicEventShellBySlug(eventSlug);
+  const requiresAccess = await eventRequiresViewerAccess(eventSlug);
+  const savedAccessCode = await getViewerAccessCode(eventSlug);
+  const hasAccess =
+    !requiresAccess ||
+    (savedAccessCode
+      ? await verifyViewerAccess(eventSlug, savedAccessCode)
+      : false);
+
+  if (!hasAccess) {
+    return (
+      <EventAccessCodeForm
+        eventName={shellEvent.name}
+        eventSlug={eventSlug}
+        error={error}
+        nextPath={`/events/${eventSlug}`}
+      />
+    );
+  }
+
+  const event = await getPublicEventBySlug(eventSlug, savedAccessCode);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center px-6 py-10">
       <div className="mb-8 max-w-3xl">
-        <StatusPill tone="live">{event.visibility}</StatusPill>
-        <h1 className="mt-4 text-5xl font-bold tracking-normal text-slate-950">
+        <h1 className="text-5xl font-bold tracking-normal text-slate-950">
           {event.name}
         </h1>
-        <p className="mt-4 text-lg leading-8 text-slate-600">
-          {event.description}
-        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -40,9 +64,6 @@ export default async function EventDetailPage({
               <Trophy className="h-6 w-6" />
             </div>
             <CardTitle>Game Points</CardTitle>
-            <CardDescription>
-              Live team rankings, points, podium display, and final standings.
-            </CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild className="w-full">
@@ -59,9 +80,6 @@ export default async function EventDetailPage({
               <ShieldCheck className="h-6 w-6" />
             </div>
             <CardTitle>Football</CardTitle>
-            <CardDescription>
-              Fixtures, live match scores, officials, results, and standings.
-            </CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild variant="outline" className="w-full">

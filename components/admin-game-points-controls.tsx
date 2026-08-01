@@ -59,6 +59,8 @@ export function AdminGamePointsControls({
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [actorId, setActorId] = useState<string | null>(null);
+  const [quickActionsOpen, setQuickActionsOpen] = useState(false);
+  const [settingsTeamId, setSettingsTeamId] = useState<string | null>(null);
   const [quickAmounts, setQuickAmounts] = useState(defaultQuickAmounts);
   const [quickAmountInputs, setQuickAmountInputs] = useState(
     defaultQuickAmounts.map(String),
@@ -125,10 +127,12 @@ export function AdminGamePointsControls({
 
     setQuickAmounts(numericQuickAmounts);
     setError(null);
+    setNotice("Quick actions saved");
     window.localStorage.setItem(
       quickAmountsStorageKey,
       numericQuickAmounts.join(","),
     );
+    setQuickActionsOpen(false);
   }
 
   async function updateScore(teamId: string, mode: ScoreMode, value: number) {
@@ -284,7 +288,7 @@ export function AdminGamePointsControls({
           </CardContent>
         </Card>
         </div>
-        <Dialog>
+        <Dialog open={quickActionsOpen} onOpenChange={setQuickActionsOpen}>
           <DialogTrigger asChild>
             <Button className="lg:mt-1" type="button" variant="outline">
               <SlidersHorizontal className="h-4 w-4" />
@@ -445,7 +449,12 @@ export function AdminGamePointsControls({
                   </Button>
                 </div>
 
-                <Dialog>
+                <Dialog
+                  open={settingsTeamId === team.id}
+                  onOpenChange={(open) =>
+                    setSettingsTeamId(open ? team.id : null)
+                  }
+                >
                   <DialogTrigger asChild>
                     <Button
                       className="hidden h-9 w-full text-xs sm:inline-flex sm:h-10 sm:text-sm"
@@ -465,7 +474,11 @@ export function AdminGamePointsControls({
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-5">
-                    <form action={updateTeam} className="space-y-3">
+                    <form
+                      action={updateTeam}
+                      className="space-y-3"
+                      onSubmit={() => setSettingsTeamId(null)}
+                    >
                       <input name="event_id" type="hidden" value={eventId} />
                       <input name="team_id" type="hidden" value={team.id} />
                       <Input
@@ -506,6 +519,7 @@ export function AdminGamePointsControls({
                     <form
                       action={deleteTeam}
                       className="space-y-3 border-t border-slate-200 pt-5"
+                      onSubmit={() => setSettingsTeamId(null)}
                     >
                       <input name="event_id" type="hidden" value={eventId} />
                       <input name="team_id" type="hidden" value={team.id} />

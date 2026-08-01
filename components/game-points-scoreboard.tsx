@@ -7,36 +7,40 @@ import type { Team } from "@/lib/sample-data";
 import { createClient } from "@/lib/supabase/client";
 
 type GamePointsScoreboardProps = {
+  accessCode: string;
   eventId: string;
   eventName: string;
+  eventSlug: string;
   initialTeams: Team[];
 };
 
-type TeamScoreRow = {
-  id: string;
-  name: string;
-  colour: string;
-  badge_text: string | null;
-  badge_url: string | null;
-  game_points_scores: Array<{
+type PublicEventPayload = {
+  teams: Array<{
+    id: string;
+    name: string;
+    colour: string;
+    badge_text: string | null;
+    badge_url: string | null;
     points: number;
-  }> | null;
+  }>;
 };
 
-function mapTeam(row: TeamScoreRow): Team {
+function mapPublicTeam(row: PublicEventPayload["teams"][number]): Team {
   return {
     id: row.id,
     name: row.name,
     colour: row.colour,
     badge: row.badge_text ?? row.name.charAt(0).toUpperCase(),
     badgeUrl: row.badge_url,
-    points: row.game_points_scores?.at(0)?.points ?? 0,
+    points: row.points,
   };
 }
 
 export function GamePointsScoreboard({
+  accessCode,
   eventId,
   eventName,
+  eventSlug,
   initialTeams,
 }: GamePointsScoreboardProps) {
   const [teams, setTeams] = useState(initialTeams);
@@ -58,17 +62,19 @@ export function GamePointsScoreboard({
     async function refreshTeams(updatedTeamId?: string) {
       try {
         const supabase = createClient();
-        const { data, error } = await supabase
-          .from("teams")
-          .select("id,name,colour,badge_text,badge_url,game_points_scores(points)")
-          .eq("event_id", eventId)
-          .order("created_at");
+        const { data, error } = await supabase.rpc(
+          "get_public_event_for_viewer",
+          {
+            event_slug: eventSlug,
+            submitted_code: accessCode,
+          },
+        );
 
         if (!isMounted || error || !data) {
           return;
         }
 
-        setTeams(data.map((team) => mapTeam(team)));
+        setTeams((data as PublicEventPayload).teams.map((team) => mapPublicTeam(team)));
 
         if (updatedTeamId) {
           setLastUpdatedTeamId(updatedTeamId);
@@ -150,7 +156,7 @@ export function GamePointsScoreboard({
       setConnectionState("Static");
       return undefined;
     }
-  }, [eventId]);
+  }, [accessCode, eventId, eventSlug]);
 
   return (
     <section className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 py-8">

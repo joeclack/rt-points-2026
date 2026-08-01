@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -23,9 +22,6 @@ export default async function LoginPage({
       <Card>
         <CardHeader>
           <CardTitle>Admin login</CardTitle>
-          <CardDescription>
-            Sign in with Supabase Auth to manage your events.
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <form action={login} className="space-y-4">
@@ -41,12 +37,9 @@ export default async function LoginPage({
               Log in
             </Button>
           </form>
-          <p className="text-center text-sm text-slate-600">
-            Need an account?{" "}
-            <Link className="font-medium text-slate-950" href="/signup">
-              Create one
-            </Link>
-          </p>
+          <Button asChild className="mt-3 w-full" type="button" variant="outline">
+            <Link href="/signup">Create account</Link>
+          </Button>
         </CardContent>
       </Card>
     </main>
