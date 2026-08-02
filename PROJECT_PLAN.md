@@ -2,7 +2,7 @@
 
 This plan turns the product spec into implementation phases for `rt-points-2026`.
 
-The first release should prove the live scoring experience with **Team Game Points** inside an admin-created event. Football tracking should be planned into the event structure, but not built until the core product is stable.
+The first release proved the live scoring experience with **Team Game Points** inside an admin-created event. Football now builds on that stable event, team, Auth, access-code and realtime foundation.
 
 ## Guiding Principles
 
@@ -13,7 +13,7 @@ The first release should prove the live scoring experience with **Team Game Poin
 - Use Supabase Auth for admin accounts and future official access.
 - Let public viewers search for visible events without requiring an account.
 - Use shared concepts that can support both tracker types later: events, teams, participants, public views, admins, officials, and realtime updates.
-- Avoid building full football functionality until the points tracker is working end to end.
+- Extend the proven points-tracker patterns into football without duplicating event teams or access rules.
 
 ## Phase 0: Product Setup
 
@@ -66,7 +66,8 @@ Goal: create the base application structure.
 - `/events/[eventSlug]` - public event detail page
 - `/events/[eventSlug]/game-points` - public game points scoreboard
 - `/admin/events/[eventId]/game-points` - admin game points dashboard
-- `/events/[eventSlug]/football` - placeholder future football public page
+- `/events/[eventSlug]/football` - public live football match centre
+- `/admin/events/[eventId]/football` - tournament, fixture and live-match admin
 
 ### Output
 
@@ -75,7 +76,7 @@ Goal: create the base application structure.
 - Admin auth route shells.
 - Event management route shells.
 - Game Points admin and public route shells.
-- Football route clearly marked as future scope.
+- Football routes reserved for the later tournament slice.
 
 ## Phase 2: Auth, Events, And Supabase Setup
 
@@ -302,6 +303,8 @@ Goal: deploy the MVC and make it shareable.
 
 ## Phase 9: Football Planning
 
+Status: completed and superseded by Phase 10.
+
 Goal: plan the second tracker after the points tracker proves the core product.
 
 ### Steps
@@ -333,6 +336,38 @@ Goal: plan the second tracker after the points tracker proves the core product.
 - Football data model.
 - Football implementation plan.
 
+## Phase 10: Football Tournaments And Live Matches
+
+Status: implemented in the application and migration
+`005_football_tournaments.sql`.
+
+Goal: deliver a complete football vertical slice using the same events, admins,
+viewer access and teams as Game Points.
+
+### Implemented
+
+- Multiple football tournaments per event.
+- Shared event-team selection and knockout seeding.
+- Round-robin league fixture generation.
+- Knockout brackets starting at quarter-finals, semi-finals or final.
+- Winner progression into the next knockout match.
+- Extra match creation, kickoff scheduling and venue labels.
+- Live, half-time and full-time match workflow.
+- Large touch-friendly goal controls and exact-score corrections.
+- Result reopening with downstream-knockout safety checks.
+- Football match event audit history.
+- Live/provisional league standings.
+- Public responsive match centre with live hero scores, fixtures and results.
+- Public knockout bracket.
+- Supabase Realtime match updates with five-second RPC refresh fallback.
+- Access-code-aware public football reads and event-admin RLS policies.
+
+### Still Deferred
+
+- Dedicated official roles and match assignments.
+- Group stages that qualify teams into a knockout bracket.
+- Penalty shoot-out and player-level match events.
+
 ## Suggested Build Order
 
 1. App foundation.
@@ -350,6 +385,7 @@ Goal: plan the second tracker after the points tracker proves the core product.
 13. Deployment to Vercel.
 14. Live event test.
 15. Football planning.
+16. Football tournaments and live match tracking.
 
 ## MVC Completion Criteria
 
@@ -368,15 +404,14 @@ The MVC is complete when:
 - The app is deployed on Vercel.
 - The app can be used for a real small event without manual database changes.
 
-## Deferred Until After MVC
+## Deferred Beyond The Current Build
 
-- Full football tracker.
-- Multi-admin event invitations.
 - Official accounts and match assignments.
 - Organisation/team workspaces.
 - Score history UI.
 - Undo and redo.
-- Tournament brackets.
+- Group-to-knockout tournament formats.
+- Player-level football events.
 - Analytics.
 - Payments.
 - Native mobile app.

@@ -26,6 +26,7 @@ supabase/migrations/001_initial_event_auth_schema.sql
 supabase/migrations/002_enable_game_points_realtime.sql
 supabase/migrations/003_event_viewer_access_codes.sql
 supabase/migrations/004_event_admin_collaborators.sql
+supabase/migrations/005_football_tournaments.sql
 ```
 
 The schema creates:
@@ -44,15 +45,21 @@ The public scoreboard also refreshes every five seconds as a fallback.
 
 The third migration adds optional viewer access codes. The fourth adds
 event-admin collaborators while keeping event ownership and deletion restricted
-to the original owner.
+to the original owner. The fifth adds football tournaments, shared tournament
+teams, fixtures, live scores, knockout progression fields, audit history,
+access-code-aware public reads, RLS and Realtime publication.
 
 ## Auth Flow
 
 - Admins sign up or log in with Supabase Auth.
 - Logged-in admins can create events.
 - Public viewers can search visible events without an account.
+- Event admins can create tournaments and run football matches.
 - Future officials can use the same Auth foundation with event or match assignment.
 
 ## Current Local Behaviour
 
 If Supabase env vars are not set, the app falls back to local sample events so the Phase 1/2 shell remains browsable.
+
+Set `RT_POINTS_USE_SAMPLE_DATA=true` for a local visual preview that ignores
+configured Supabase credentials without changing or removing `.env`.

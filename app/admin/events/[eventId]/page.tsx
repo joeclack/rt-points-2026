@@ -257,11 +257,19 @@ export default async function AdminEventPage({
             <CardTitle>Football</CardTitle>
           </CardHeader>
           <CardContent>
-            <Button asChild variant="outline" className="w-full">
-              <Link href={`/events/${event.slug}/football`}>
-                View placeholder
-              </Link>
-            </Button>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Button asChild>
+                <Link href={`/admin/events/${event.id}/football`}>
+                  Manage football
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href={`/events/${event.slug}/football`}>
+                  <Monitor className="h-4 w-4" />
+                  Public display
+                </Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

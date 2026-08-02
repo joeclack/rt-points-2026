@@ -45,7 +45,7 @@ export default async function NewEventPage({
                 </label>
                 <label className="flex items-center gap-2 text-sm text-slate-700">
                   <input name="football_enabled" type="checkbox" defaultChecked />
-                  Football placeholder
+                  Football tournaments
                 </label>
               </div>
             </div>

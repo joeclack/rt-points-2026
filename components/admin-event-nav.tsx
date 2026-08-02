@@ -6,6 +6,7 @@ import {
   LogOut,
   Monitor,
   PlusCircle,
+  ShieldCheck,
   Trophy,
 } from "lucide-react";
 import Link from "next/link";
@@ -36,15 +37,21 @@ export function AdminEventNav({ eventId, eventSlug }: AdminEventNavProps) {
     },
     {
       href: `/admin/events/${eventId}/game-points`,
-      label: "Scores",
+      label: "Points",
       icon: Trophy,
       isActive: pathname === `/admin/events/${eventId}/game-points`,
     },
     {
+      href: `/admin/events/${eventId}/football`,
+      label: "Football",
+      icon: ShieldCheck,
+      isActive: pathname === `/admin/events/${eventId}/football`,
+    },
+    {
       href: `/events/${eventSlug}/game-points`,
-      label: "Display",
+      label: "Public",
       icon: Monitor,
-      isActive: pathname === `/events/${eventSlug}/game-points`,
+      isActive: pathname.startsWith(`/events/${eventSlug}`),
     },
   ] : [
     {
@@ -96,7 +103,7 @@ export function AdminEventNav({ eventId, eventSlug }: AdminEventNavProps) {
         <div
           className={cn(
             "mx-auto grid max-w-md gap-1",
-            navItems.length === 2 ? "grid-cols-3" : "grid-cols-5",
+            navItems.length === 2 ? "grid-cols-3" : "grid-cols-6",
           )}
         >
           {navItems.map((item) => {

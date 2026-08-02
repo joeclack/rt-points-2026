@@ -58,7 +58,7 @@ export const sampleEvents: EventSummary[] = [
     slug: "the-jesus-generation",
     name: "The Jesus Generation",
     description:
-      "A live event with team games now and football match tracking planned for the same event.",
+      "A live event with team games, football tournaments, fixtures and match tracking in one place.",
     dateLabel: "Summer 2026",
     location: "Main auditorium",
     visibility: "public",

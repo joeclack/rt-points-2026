@@ -3,6 +3,10 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 export function isSupabaseConfigured() {
+  if (process.env.RT_POINTS_USE_SAMPLE_DATA === "true") {
+    return false;
+  }
+
   return Boolean(
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
       (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??

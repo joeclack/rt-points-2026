@@ -82,9 +82,9 @@ export default async function EventDetailPage({
             <CardTitle>Football</CardTitle>
           </CardHeader>
           <CardContent>
-            <Button asChild variant="outline" className="w-full">
+            <Button asChild className="w-full">
               <Link href={`/events/${event.slug}/football`}>
-                View football placeholder
+                Open match centre
               </Link>
             </Button>
           </CardContent>

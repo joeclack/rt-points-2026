@@ -192,6 +192,286 @@ export type Database = {
           },
         ];
       };
+      football_tournaments: {
+        Row: {
+          id: string;
+          event_id: string;
+          name: string;
+          format: "league" | "knockout";
+          start_stage: "quarter_final" | "semi_final" | "final" | null;
+          status: "scheduled" | "live" | "completed";
+          win_points: number;
+          draw_points: number;
+          loss_points: number;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          event_id: string;
+          name: string;
+          format: "league" | "knockout";
+          start_stage?: "quarter_final" | "semi_final" | "final" | null;
+          status?: "scheduled" | "live" | "completed";
+          win_points?: number;
+          draw_points?: number;
+          loss_points?: number;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          event_id?: string;
+          name?: string;
+          format?: "league" | "knockout";
+          start_stage?: "quarter_final" | "semi_final" | "final" | null;
+          status?: "scheduled" | "live" | "completed";
+          win_points?: number;
+          draw_points?: number;
+          loss_points?: number;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "football_tournaments_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      football_tournament_teams: {
+        Row: {
+          tournament_id: string;
+          team_id: string;
+          seed: number;
+          created_at: string;
+        };
+        Insert: {
+          tournament_id: string;
+          team_id: string;
+          seed: number;
+          created_at?: string;
+        };
+        Update: {
+          tournament_id?: string;
+          team_id?: string;
+          seed?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "football_tournament_teams_tournament_id_fkey";
+            columns: ["tournament_id"];
+            isOneToOne: false;
+            referencedRelation: "football_tournaments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "football_tournament_teams_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      football_matches: {
+        Row: {
+          id: string;
+          tournament_id: string;
+          event_id: string;
+          home_team_id: string | null;
+          away_team_id: string | null;
+          stage:
+            | "league"
+            | "round_of_16"
+            | "quarter_final"
+            | "semi_final"
+            | "third_place"
+            | "final"
+            | "friendly";
+          round_number: number;
+          position: number;
+          kickoff_at: string | null;
+          venue: string | null;
+          status:
+            | "scheduled"
+            | "live"
+            | "halftime"
+            | "full_time"
+            | "postponed"
+            | "cancelled";
+          home_score: number;
+          away_score: number;
+          winner_team_id: string | null;
+          next_match_id: string | null;
+          next_match_slot: "home" | "away" | null;
+          started_at: string | null;
+          ended_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tournament_id: string;
+          event_id: string;
+          home_team_id?: string | null;
+          away_team_id?: string | null;
+          stage:
+            | "league"
+            | "round_of_16"
+            | "quarter_final"
+            | "semi_final"
+            | "third_place"
+            | "final"
+            | "friendly";
+          round_number?: number;
+          position?: number;
+          kickoff_at?: string | null;
+          venue?: string | null;
+          status?:
+            | "scheduled"
+            | "live"
+            | "halftime"
+            | "full_time"
+            | "postponed"
+            | "cancelled";
+          home_score?: number;
+          away_score?: number;
+          winner_team_id?: string | null;
+          next_match_id?: string | null;
+          next_match_slot?: "home" | "away" | null;
+          started_at?: string | null;
+          ended_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          tournament_id?: string;
+          event_id?: string;
+          home_team_id?: string | null;
+          away_team_id?: string | null;
+          stage?:
+            | "league"
+            | "round_of_16"
+            | "quarter_final"
+            | "semi_final"
+            | "third_place"
+            | "final"
+            | "friendly";
+          round_number?: number;
+          position?: number;
+          kickoff_at?: string | null;
+          venue?: string | null;
+          status?:
+            | "scheduled"
+            | "live"
+            | "halftime"
+            | "full_time"
+            | "postponed"
+            | "cancelled";
+          home_score?: number;
+          away_score?: number;
+          winner_team_id?: string | null;
+          next_match_id?: string | null;
+          next_match_slot?: "home" | "away" | null;
+          started_at?: string | null;
+          ended_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "football_matches_tournament_id_fkey";
+            columns: ["tournament_id"];
+            isOneToOne: false;
+            referencedRelation: "football_tournaments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "football_matches_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      football_match_events: {
+        Row: {
+          id: string;
+          event_id: string;
+          tournament_id: string;
+          match_id: string;
+          actor_id: string | null;
+          event_type:
+            | "score"
+            | "kickoff"
+            | "halftime"
+            | "resume"
+            | "full_time"
+            | "reopen"
+            | "schedule";
+          home_score: number;
+          away_score: number;
+          note: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          event_id: string;
+          tournament_id: string;
+          match_id: string;
+          actor_id?: string | null;
+          event_type:
+            | "score"
+            | "kickoff"
+            | "halftime"
+            | "resume"
+            | "full_time"
+            | "reopen"
+            | "schedule";
+          home_score: number;
+          away_score: number;
+          note?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          event_id?: string;
+          tournament_id?: string;
+          match_id?: string;
+          actor_id?: string | null;
+          event_type?:
+            | "score"
+            | "kickoff"
+            | "halftime"
+            | "resume"
+            | "full_time"
+            | "reopen"
+            | "schedule";
+          home_score?: number;
+          away_score?: number;
+          note?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "football_match_events_match_id_fkey";
+            columns: ["match_id"];
+            isOneToOne: false;
+            referencedRelation: "football_matches";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       game_points_scores: {
         Row: {
           event_id: string;
@@ -286,6 +566,13 @@ export type Database = {
         Returns: boolean;
       };
       get_public_event_for_viewer: {
+        Args: {
+          event_slug: string;
+          submitted_code?: string;
+        };
+        Returns: Json;
+      };
+      get_public_football_for_viewer: {
         Args: {
           event_slug: string;
           submitted_code?: string;

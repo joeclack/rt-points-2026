@@ -1,33 +1,13 @@
-import { CalendarDays, ShieldCheck, Trophy } from "lucide-react";
-
 import { EventAccessCodeForm } from "@/components/event-access-code-form";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { FootballLiveCentre } from "@/components/football-live-centre";
 import {
   eventRequiresViewerAccess,
   getPublicEventBySlug,
   getPublicEventShellBySlug,
   verifyViewerAccess,
 } from "@/lib/events";
+import { getPublicFootballTournaments } from "@/lib/football";
 import { getViewerAccessCode } from "@/lib/viewer-access";
-
-const futureAreas = [
-  {
-    title: "Fixtures",
-    icon: CalendarDays,
-  },
-  {
-    title: "Officials",
-    icon: ShieldCheck,
-  },
-  {
-    title: "Standings",
-    icon: Trophy,
-  },
-];
 
 export default async function EventFootballPage({
   params,
@@ -59,27 +39,19 @@ export default async function EventFootballPage({
   }
 
   const event = await getPublicEventBySlug(eventSlug, savedAccessCode);
+  const tournaments = await getPublicFootballTournaments(
+    eventSlug,
+    savedAccessCode,
+  );
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center px-6 py-10">
-      <div className="mb-8 max-w-3xl">
-        <h1 className="text-4xl font-bold tracking-normal text-slate-950">
-          Football for {event.name}
-        </h1>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        {futureAreas.map((area) => (
-          <Card key={area.title}>
-            <CardHeader>
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-slate-950 text-white">
-                <area.icon className="h-6 w-6" />
-              </div>
-              <CardTitle>{area.title}</CardTitle>
-            </CardHeader>
-          </Card>
-        ))}
-      </div>
-    </main>
+    <FootballLiveCentre
+      accessCode={savedAccessCode}
+      eventId={event.id}
+      eventName={event.name}
+      eventSlug={event.slug}
+      initialTeams={event.teams}
+      initialTournaments={tournaments}
+    />
   );
 }

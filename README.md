@@ -15,7 +15,7 @@ The app should feel simple enough to run during a live event, but broad enough t
 
 Organisers should be able to create an account, log in to an admin area, create an event, manage teams, update scores in real time, and publish a clean live display for spectators.
 
-Officials should eventually be able to update live football match scores from the field, with admins able to review, correct, and publish results.
+Event admins can run live football matches from the field, correct scores, and publish results. A narrower official-only role can be added later on the same Auth foundation.
 
 Spectators should be able to search for public events, select the event they want, and view its live game points, football fixtures, live scores, results, and standings.
 
@@ -84,24 +84,31 @@ Use this mode when teams collect points across games, rounds, or challenges.
 
 ## Tracker 2: Football
 
-This is the future sports-tracking mode.
+This is the live tournament and match-tracking mode.
 
-Use this mode for football competitions where teams play scheduled matches and officials update live scores.
+Use this mode for football competitions where shared event teams play scheduled matches and admins update live scores.
 
-### Future Features
+### Core Features
 
-- Add football to an existing event
-- Manage football teams
-- Create fixtures and schedules
-- Assign officials to matches
-- Track match status: upcoming, live, halftime, full-time
-- Update live match score
-- Submit score updates from officials
-- Allow admin review and correction
-- Generate standings and league tables
-- Show public fixtures and results
-- Show a public live match centre
-- Support tournament groups or knockout rounds later
+- Create multiple tournaments inside an event
+- Reuse names, colours and badges from the event's Game Points teams
+- Create a round-robin league with automatic fixtures
+- Create a knockout cup starting at the quarter-finals, semi-finals or final
+- Automatically move knockout winners into the next round
+- Add extra fixtures and set kickoff times and venues
+- Track match status: upcoming, live, half-time and full-time
+- Update and correct scores live
+- Reopen a completed result when the next knockout round has not started
+- Generate a live/provisional league table
+- Show a public phone-first match centre, fixtures, results and bracket
+- Push match updates with Supabase Realtime and a five-second refresh fallback
+
+### Deferred Football Features
+
+- Dedicated official accounts and match assignments
+- Group stages feeding into a knockout bracket
+- Penalty shoot-out detail
+- Player, scorer, card and substitution events
 
 ## Main App Experience
 
@@ -119,9 +126,9 @@ Inside an event, the app should show a clear tracker choice:
 
 Each tracker should have its own admin workflow and public display, while sharing the same event, visual identity, team data patterns, and real-time update feel.
 
-## MVC Scope
+## Implemented Scope
 
-The first version should focus on event creation, public event discovery, and **Team Game Points**.
+The current app includes event creation, public discovery, **Team Game Points**, and the first complete **Football** tournament slice.
 
 ### MVC Screens
 
@@ -136,6 +143,10 @@ The first version should focus on event creation, public event discovery, and **
 - Image or badge upload dialog
 - Public audience scoreboard for selected event
 - Winner or final standings view
+- Football tournament admin
+- Football fixture and live-match controls
+- Public football match centre
+- League tables and knockout brackets
 
 ### MVC Features
 
@@ -153,16 +164,16 @@ The first version should focus on event creation, public event discovery, and **
 - Reset scores
 - Responsive admin experience
 - Projector-friendly audience view
+- Shared event teams across both trackers
+- League and knockout tournament generation
+- Live football scores, fixtures, results and standings
 
-## Out Of Scope For MVC
+## Out Of Scope
 
-- Full football fixture management
 - Complex organisation accounts
-- Multi-admin event invitations
 - Official accounts and assignments
-- Score history
+- Player-level football events
 - Undo and redo
-- Tournament brackets
 - Payments or subscriptions
 - Advanced analytics
 
