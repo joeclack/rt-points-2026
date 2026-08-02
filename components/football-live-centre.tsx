@@ -18,7 +18,6 @@ import { FootballStandings } from "@/components/football-standings";
 import { TeamBadge } from "@/components/team-badge";
 import {
   footballStageLabels,
-  footballStatusLabels,
   isLiveFootballMatch,
   type FootballMatch,
   type FootballTournament,
@@ -124,22 +123,9 @@ function formatKickoff(iso: string | null) {
   }).format(new Date(iso));
 }
 
-function PublicTeam({
-  align,
-  score,
-  team,
-}: {
-  align: "left" | "right";
-  score: number;
-  team?: Team;
-}) {
+function PublicTeam({ team }: { team?: Team }) {
   return (
-    <div
-      className={cn(
-        "flex min-w-0 flex-1 flex-col items-center",
-        align === "left" ? "sm:items-end" : "sm:items-start",
-      )}
-    >
+    <div className="flex min-w-0 flex-col items-center px-1">
       {team ? (
         <TeamBadge
           badge={team.badge}
@@ -156,7 +142,6 @@ function PublicTeam({
       <p className="mt-3 max-w-full truncate text-center text-lg font-bold text-white sm:text-2xl">
         {team?.name ?? "Winner TBD"}
       </p>
-      <span className="sr-only">Score {score}</span>
     </div>
   );
 }
@@ -180,41 +165,33 @@ function LiveMatchHero({
         highlighted && "ring-4 ring-cyan-300/50",
       )}
     >
-      <div className="relative z-10">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="rounded-full bg-rose-500 px-3 py-1 text-xs font-black uppercase tracking-[0.15em] text-white shadow-lg shadow-rose-950/30">
-            <span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-white" />
-            {footballStatusLabels[match.status]}
-          </span>
-          <span className="text-xs font-bold uppercase tracking-wider text-emerald-100/80">
-            {footballStageLabels[match.stage]}
-          </span>
+      <div className="relative z-10 min-h-[15rem] sm:min-h-[18rem]">
+        <span className="absolute right-0 top-0 text-xs font-bold uppercase tracking-wider text-emerald-100/80">
+          {footballStageLabels[match.stage]}
+        </span>
+
+        <div className="absolute inset-x-0 top-1/2 grid -translate-y-1/2 grid-cols-2">
+          <PublicTeam team={homeTeam} />
+          <PublicTeam team={awayTeam} />
         </div>
 
-        <div className="mt-8 flex items-start justify-center gap-3 sm:gap-8">
-          <PublicTeam
-            align="left"
-            score={match.homeScore}
-            team={homeTeam}
-          />
-          <div className="flex shrink-0 items-center gap-2 pt-5 sm:gap-4 sm:pt-7">
+        <div
+          aria-label={`${match.homeScore} to ${match.awayScore}`}
+          className="absolute left-1/2 top-1/2 z-20 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 sm:gap-2"
+        >
             <span className="text-5xl font-black tracking-tighter text-white sm:text-7xl">
               {match.homeScore}
             </span>
-            <span className="text-xl font-black text-emerald-200/70">–</span>
+            <span className="text-lg font-black text-emerald-200/70 sm:text-2xl">
+              –
+            </span>
             <span className="text-5xl font-black tracking-tighter text-white sm:text-7xl">
               {match.awayScore}
             </span>
-          </div>
-          <PublicTeam
-            align="right"
-            score={match.awayScore}
-            team={awayTeam}
-          />
         </div>
 
         {match.venue ? (
-          <p className="mt-8 flex items-center justify-center gap-1.5 text-xs font-medium text-emerald-100/70">
+          <p className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 text-xs font-medium text-emerald-100/70">
             <MapPin className="h-3.5 w-3.5" />
             {match.venue}
           </p>
