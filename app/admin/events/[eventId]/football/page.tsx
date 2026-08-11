@@ -10,6 +10,8 @@ import Link from "next/link";
 import { addFootballMatch } from "@/app/admin/events/[eventId]/football/actions";
 import { AdminFootballMatchCard } from "@/components/admin-football-match-card";
 import { AdminFootballTournamentForm } from "@/components/admin-football-tournament-form";
+import { AdminTeamJoinRequests } from "@/components/admin-team-join-requests";
+import { AdminTeamControls } from "@/components/admin-team-controls";
 import { FootballAdminRealtimeRefresh } from "@/components/football-admin-realtime-refresh";
 import { FootballBracket } from "@/components/football-bracket";
 import { FootballStandings } from "@/components/football-standings";
@@ -26,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { requireAdminUser } from "@/lib/auth";
 import { getAdminEventById } from "@/lib/events";
 import { getAdminFootballTournaments } from "@/lib/football";
+import { getPendingTeamJoinRequests } from "@/lib/team-join-requests";
 
 export default async function AdminEventFootballPage({
   params,
@@ -42,9 +45,10 @@ export default async function AdminEventFootballPage({
   const { eventId } = await params;
   const { error, message, tournament: selectedTournamentId } =
     await searchParams;
-  const [event, tournaments] = await Promise.all([
+  const [event, tournaments, joinRequests] = await Promise.all([
     getAdminEventById(eventId, user?.id, { includeTeams: true }),
     getAdminFootballTournaments(eventId),
+    getPendingTeamJoinRequests(eventId),
   ]);
   const selectedTournament =
     tournaments.find(
@@ -97,6 +101,10 @@ export default async function AdminEventFootballPage({
         </p>
       ) : null}
 
+      <AdminTeamJoinRequests eventId={event.id} requests={joinRequests} />
+
+      <AdminTeamControls eventId={event.id} teams={event.teams} />
+
       {event.teams.length < 2 ? (
         <Card>
           <CardHeader>
@@ -104,14 +112,8 @@ export default async function AdminEventFootballPage({
           </CardHeader>
           <CardContent>
             <p className="mb-4 text-sm text-slate-600">
-              Football uses the same teams as Game Points, so names, colours and
-              badges stay in sync.
+              Add at least two football teams before creating fixtures.
             </p>
-            <Button asChild>
-              <Link href={`/admin/events/${event.id}/game-points`}>
-                Manage shared teams
-              </Link>
-            </Button>
           </CardContent>
         </Card>
       ) : (

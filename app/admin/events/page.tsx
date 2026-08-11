@@ -25,7 +25,7 @@ export default async function AdminEventsPage() {
           <div>
             <StatusPill tone="neutral">Admin</StatusPill>
             <h1 className="mt-4 text-3xl font-bold tracking-normal text-slate-950">
-              Your events
+              Your tournaments
             </h1>
           </div>
         </header>
@@ -42,8 +42,7 @@ export default async function AdminEventsPage() {
                     </StatusPill>
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    {event.trackers.length} tracker
-                    {event.trackers.length === 1 ? "" : "s"}
+                    Football
                   </span>
                 </div>
                 <CardTitle>{event.name}</CardTitle>
@@ -55,7 +54,9 @@ export default async function AdminEventsPage() {
                 </p>
                 <div className="grid gap-2 sm:grid-cols-2">
                   <Button asChild>
-                    <Link href={`/admin/events/${event.id}`}>Manage event</Link>
+                    <Link href={`/admin/events/${event.id}`}>
+                      Manage tournament
+                    </Link>
                   </Button>
                   <Button asChild variant="outline">
                     <Link href={`/events/${event.slug}`}>View public page</Link>

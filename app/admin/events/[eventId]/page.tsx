@@ -2,7 +2,6 @@ import {
   Monitor,
   Search,
   ShieldCheck,
-  Trophy,
   UserMinus,
   UserPlus,
   Users,
@@ -227,29 +226,7 @@ export default async function AdminEventPage({
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-cyan-600 text-white">
-              <Trophy className="h-6 w-6" />
-            </div>
-            <CardTitle>Game Points</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-2 sm:grid-cols-2">
-            <Button asChild>
-              <Link href={`/admin/events/${event.id}/game-points`}>
-                Manage scores
-              </Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href={`/events/${event.slug}/game-points`}>
-                <Monitor className="h-4 w-4" />
-                Public display
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
+        <Card className="md:col-span-2">
           <CardHeader>
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-slate-950 text-white">
               <ShieldCheck className="h-6 w-6" />

@@ -40,7 +40,6 @@ export type Database = {
           date_label: string | null;
           location: string | null;
           visibility: "public" | "private";
-          game_points_enabled: boolean;
           football_enabled: boolean;
           status: "draft" | "live" | "finished";
           created_at: string;
@@ -55,7 +54,6 @@ export type Database = {
           date_label?: string | null;
           location?: string | null;
           visibility?: "public" | "private";
-          game_points_enabled?: boolean;
           football_enabled?: boolean;
           status?: "draft" | "live" | "finished";
           created_at?: string;
@@ -70,7 +68,6 @@ export type Database = {
           date_label?: string | null;
           location?: string | null;
           visibility?: "public" | "private";
-          game_points_enabled?: boolean;
           football_enabled?: boolean;
           status?: "draft" | "live" | "finished";
           created_at?: string;
@@ -188,6 +185,83 @@ export type Database = {
             columns: ["event_id"];
             isOneToOne: false;
             referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      team_join_requests: {
+        Row: {
+          id: string;
+          event_id: string;
+          team_name: string;
+          team_colour: string;
+          status: "pending" | "accepted" | "rejected";
+          created_team_id: string | null;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          event_id: string;
+          team_name: string;
+          team_colour: string;
+          status?: "pending" | "accepted" | "rejected";
+          created_team_id?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          event_id?: string;
+          team_name?: string;
+          team_colour?: string;
+          status?: "pending" | "accepted" | "rejected";
+          created_team_id?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "team_join_requests_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "team_join_requests_created_team_id_fkey";
+            columns: ["created_team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      team_join_request_players: {
+        Row: {
+          request_id: string;
+          slot: number;
+          name: string;
+        };
+        Insert: {
+          request_id: string;
+          slot: number;
+          name: string;
+        };
+        Update: {
+          request_id?: string;
+          slot?: number;
+          name?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "team_join_request_players_request_id_fkey";
+            columns: ["request_id"];
+            isOneToOne: false;
+            referencedRelation: "team_join_requests";
             referencedColumns: ["id"];
           },
         ];
@@ -472,90 +546,6 @@ export type Database = {
           },
         ];
       };
-      game_points_scores: {
-        Row: {
-          event_id: string;
-          team_id: string;
-          points: number;
-          updated_at: string;
-        };
-        Insert: {
-          event_id: string;
-          team_id: string;
-          points?: number;
-          updated_at?: string;
-        };
-        Update: {
-          event_id?: string;
-          team_id?: string;
-          points?: number;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "game_points_scores_event_id_fkey";
-            columns: ["event_id"];
-            isOneToOne: false;
-            referencedRelation: "events";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "game_points_scores_team_id_fkey";
-            columns: ["team_id"];
-            isOneToOne: false;
-            referencedRelation: "teams";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      score_events: {
-        Row: {
-          id: string;
-          event_id: string;
-          team_id: string;
-          actor_id: string | null;
-          points_delta: number | null;
-          points_after: number;
-          reason: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          event_id: string;
-          team_id: string;
-          actor_id?: string | null;
-          points_delta?: number | null;
-          points_after: number;
-          reason?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          event_id?: string;
-          team_id?: string;
-          actor_id?: string | null;
-          points_delta?: number | null;
-          points_after?: number;
-          reason?: string | null;
-          created_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "score_events_event_id_fkey";
-            columns: ["event_id"];
-            isOneToOne: false;
-            referencedRelation: "events";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "score_events_team_id_fkey";
-            columns: ["team_id"];
-            isOneToOne: false;
-            referencedRelation: "teams";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -607,6 +597,24 @@ export type Database = {
           email: string;
           has_access: boolean;
         }>;
+      };
+      submit_team_join_request: {
+        Args: {
+          event_slug: string;
+          submitted_code: string;
+          submitted_team_name: string;
+          submitted_team_colour: string;
+          submitted_player_names: string[];
+        };
+        Returns: string;
+      };
+      review_team_join_request: {
+        Args: {
+          target_request_id: string;
+          expected_event_id: string;
+          decision: "accepted" | "rejected";
+        };
+        Returns: string | null;
       };
       verify_event_viewer_access: {
         Args: {

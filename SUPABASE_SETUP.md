@@ -1,6 +1,6 @@
 # Supabase Setup
 
-Phase 2 expects a Supabase project with Auth enabled.
+The app expects a Supabase project with Auth enabled.
 
 ## Environment Variables
 
@@ -23,37 +23,44 @@ Run the SQL in:
 
 ```text
 supabase/migrations/001_initial_event_auth_schema.sql
-supabase/migrations/002_enable_game_points_realtime.sql
 supabase/migrations/003_event_viewer_access_codes.sql
 supabase/migrations/004_event_admin_collaborators.sql
 supabase/migrations/005_football_tournaments.sql
+supabase/migrations/006_remove_game_points_and_reset_users.sql
+supabase/migrations/007_team_join_requests.sql
 ```
+
+Migration `006` is intentionally destructive when upgrading an existing
+project. It removes the legacy Game Points tables and column, then deletes all
+events and all Supabase Auth users so the football-only app starts clean. Do
+not run it against an environment whose existing accounts or event data must be
+kept.
 
 The schema creates:
 
 - Supabase Auth-backed profiles
 - Events
 - Event admins
-- Event teams
-- Game Points scores
-- Score event audit rows
+- Football teams
+- Football tournaments, tournament teams, matches and match audit rows
+- Public five-player team join requests with private admin review
 - Public read policies for visible events
 - Admin-only write policies for owned/admin events
-
-The second migration enables Realtime broadcasts for team and score changes.
-The public scoreboard also refreshes every five seconds as a fallback.
+- Supabase Realtime publication for football matches and tournaments
 
 The third migration adds optional viewer access codes. The fourth adds
 event-admin collaborators while keeping event ownership and deletion restricted
-to the original owner. The fifth adds football tournaments, shared tournament
-teams, fixtures, live scores, knockout progression fields, audit history,
+to the original owner. The fifth adds football tournaments, tournament teams,
+fixtures, live scores, knockout progression fields, audit history,
 access-code-aware public reads, RLS and Realtime publication.
+The seventh adds public team applications, five-player rosters, profanity
+validation and atomic admin acceptance or rejection.
 
 ## Auth Flow
 
 - Admins sign up or log in with Supabase Auth.
-- Logged-in admins can create events.
-- Public viewers can search visible events without an account.
+- Logged-in admins can create tournaments.
+- Public viewers can search visible tournaments and submit a team without an account.
 - Event admins can create tournaments and run football matches.
 - Future officials can use the same Auth foundation with event or match assignment.
 

@@ -430,7 +430,7 @@ export function FootballLiveCentre({
         <header className="mb-6 flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <Link
-              aria-label="Back to event"
+              aria-label="Back to tournament"
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-slate-300 transition hover:bg-white/10 hover:text-white"
               href={`/events/${eventSlug}`}
             >
@@ -497,7 +497,7 @@ export function FootballLiveCentre({
             <Trophy className="mx-auto h-12 w-12 text-cyan-300" />
             <h2 className="mt-5 text-2xl font-black">Fixtures coming soon</h2>
             <p className="mx-auto mt-2 max-w-sm text-sm text-slate-400">
-              The event organisers have not published a football tournament
+              The tournament organisers have not published a football tournament
               yet. Keep this page open and it will refresh automatically.
             </p>
           </section>

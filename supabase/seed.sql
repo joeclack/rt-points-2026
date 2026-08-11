@@ -1,13 +1,12 @@
 -- Optional local/demo seed. Replace owner_id after creating a Supabase Auth user.
--- insert into public.events (owner_id, name, slug, description, date_label, location, visibility, game_points_enabled, football_enabled)
+-- insert into public.events (owner_id, name, slug, description, date_label, location, visibility, football_enabled)
 -- values (
 --   '00000000-0000-0000-0000-000000000000',
 --   'The Jesus Generation',
 --   'the-jesus-generation',
---   'A live event with team games now and football match tracking planned for the same event.',
+--   'A live football event with tournaments, fixtures and match tracking.',
 --   'Summer 2026',
 --   'Main auditorium',
 --   'public',
---   true,
 --   true
 -- );

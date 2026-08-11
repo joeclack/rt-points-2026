@@ -136,7 +136,7 @@ export function AdminFootballTournamentForm({
 
       <fieldset className="space-y-3">
         <legend className="text-sm font-semibold text-slate-800">
-          Teams from Game Points
+          Football teams
         </legend>
         <p className="text-sm text-slate-500">
           Teams are seeded for knockout matches in the order shown.

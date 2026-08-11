@@ -20,7 +20,6 @@ create table public.events (
   date_label text,
   location text,
   visibility public.event_visibility not null default 'public',
-  game_points_enabled boolean not null default true,
   football_enabled boolean not null default false,
   status public.event_status not null default 'draft',
   created_at timestamptz not null default now(),
@@ -46,29 +45,9 @@ create table public.teams (
   updated_at timestamptz not null default now()
 );
 
-create table public.game_points_scores (
-  event_id uuid not null references public.events(id) on delete cascade,
-  team_id uuid not null references public.teams(id) on delete cascade,
-  points integer not null default 0 check (points >= 0),
-  updated_at timestamptz not null default now(),
-  primary key (event_id, team_id)
-);
-
-create table public.score_events (
-  id uuid primary key default gen_random_uuid(),
-  event_id uuid not null references public.events(id) on delete cascade,
-  team_id uuid not null references public.teams(id) on delete cascade,
-  actor_id uuid references public.profiles(id) on delete set null,
-  points_delta integer,
-  points_after integer not null check (points_after >= 0),
-  reason text,
-  created_at timestamptz not null default now()
-);
-
 create index events_visibility_name_idx on public.events (visibility, name);
 create index events_owner_id_idx on public.events (owner_id);
 create index teams_event_id_idx on public.teams (event_id);
-create index score_events_event_id_created_at_idx on public.score_events (event_id, created_at desc);
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -130,8 +109,6 @@ alter table public.profiles enable row level security;
 alter table public.events enable row level security;
 alter table public.event_admins enable row level security;
 alter table public.teams enable row level security;
-alter table public.game_points_scores enable row level security;
-alter table public.score_events enable row level security;
 
 create policy "Profiles can read their own profile"
 on public.profiles for select
@@ -201,37 +178,6 @@ to authenticated
 using (public.is_event_admin(event_id))
 with check (public.is_event_admin(event_id));
 
-create policy "Public can read scores for visible events"
-on public.game_points_scores for select
-using (
-  exists (
-    select 1 from public.events
-    where events.id = game_points_scores.event_id
-      and (events.visibility = 'public' or events.owner_id = auth.uid() or public.is_event_admin(events.id))
-  )
-);
-
-create policy "Event admins can manage scores"
-on public.game_points_scores for all
-to authenticated
-using (public.is_event_admin(event_id))
-with check (public.is_event_admin(event_id));
-
-create policy "Public can read score events for visible events"
-on public.score_events for select
-using (
-  exists (
-    select 1 from public.events
-    where events.id = score_events.event_id
-      and (events.visibility = 'public' or events.owner_id = auth.uid() or public.is_event_admin(events.id))
-  )
-);
-
-create policy "Event admins can insert score events"
-on public.score_events for insert
-to authenticated
-with check (public.is_event_admin(event_id));
-
 create or replace function public.add_owner_event_admin()
 returns trigger
 language plpgsql
@@ -250,22 +196,3 @@ $$;
 create trigger events_add_owner_event_admin
 after insert on public.events
 for each row execute function public.add_owner_event_admin();
-
-create or replace function public.create_default_game_points_score()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  insert into public.game_points_scores (event_id, team_id, points)
-  values (new.event_id, new.id, 0)
-  on conflict (event_id, team_id) do nothing;
-
-  return new;
-end;
-$$;
-
-create trigger teams_create_default_game_points_score
-after insert on public.teams
-for each row execute function public.create_default_game_points_score();

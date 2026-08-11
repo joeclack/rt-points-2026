@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "rt-points-2026",
-  description: "Real-time scoring for live events and football competitions.",
+  description: "Real-time scoring for football tournaments and competitions.",
 };
 
 export default function RootLayout({

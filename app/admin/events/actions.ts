@@ -29,11 +29,9 @@ export async function createEvent(formData: FormData) {
   const description = String(formData.get("description") ?? "").trim();
   const dateLabel = String(formData.get("date_label") ?? "").trim();
   const location = String(formData.get("location") ?? "").trim();
-  const gamePointsEnabled = formData.get("game_points_enabled") === "on";
-  const footballEnabled = formData.get("football_enabled") === "on";
 
   if (!name) {
-    redirect("/admin/events/new?error=Event%20name%20is%20required");
+    redirect("/admin/events/new?error=Tournament%20name%20is%20required");
   }
 
   const { supabase, user } = await requireUser();
@@ -49,8 +47,7 @@ export async function createEvent(formData: FormData) {
       date_label: dateLabel || null,
       location: location || null,
       visibility: "public",
-      game_points_enabled: gamePointsEnabled,
-      football_enabled: footballEnabled,
+      football_enabled: true,
     })
     .select("id")
     .single();
@@ -58,7 +55,7 @@ export async function createEvent(formData: FormData) {
   if (error || !event) {
     redirect(
       `/admin/events/new?error=${encodeURIComponent(
-        error?.message ?? "Unable to create event",
+        error?.message ?? "Unable to create tournament",
       )}`,
     );
   }
@@ -71,7 +68,7 @@ export async function updateViewerAccessCode(formData: FormData) {
   const accessCode = String(formData.get("access_code") ?? "").trim();
 
   if (!eventId) {
-    redirect("/admin/events?error=Missing%20event");
+    redirect("/admin/events?error=Missing%20tournament");
   }
 
   const { supabase } = await requireUser();
@@ -110,7 +107,7 @@ export async function grantEventAdmin(formData: FormData) {
   const userId = String(formData.get("user_id") ?? "").trim();
 
   if (!eventId || !userId) {
-    redirect("/admin/events?error=Missing%20event%20or%20admin");
+    redirect("/admin/events?error=Missing%20tournament%20or%20admin");
   }
 
   const { supabase } = await requireUser();
@@ -140,7 +137,7 @@ export async function revokeEventAdmin(formData: FormData) {
   const userId = String(formData.get("user_id") ?? "").trim();
 
   if (!eventId || !userId) {
-    redirect("/admin/events?error=Missing%20event%20or%20admin");
+    redirect("/admin/events?error=Missing%20tournament%20or%20admin");
   }
 
   const { supabase } = await requireUser();

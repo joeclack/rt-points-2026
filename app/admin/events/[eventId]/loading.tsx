@@ -10,7 +10,7 @@ export default function AdminEventLoading() {
   return (
     <div className="mx-auto w-full max-w-6xl">
       <header className="mb-8 border-b border-slate-200 pb-6">
-        <StatusPill tone="live">Event admin</StatusPill>
+        <StatusPill tone="live">Tournament admin</StatusPill>
         <div className="mt-4 h-9 w-72 animate-pulse rounded-md bg-slate-200" />
         <div className="mt-3 h-5 w-full max-w-xl animate-pulse rounded-md bg-slate-200" />
       </header>

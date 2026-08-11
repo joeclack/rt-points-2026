@@ -1,4 +1,4 @@
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Search } from "lucide-react";
 import Link from "next/link";
 
 import { StatusPill } from "@/components/status-pill";
@@ -9,30 +9,51 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { searchPublicEvents } from "@/lib/events";
 
-export default async function HomePage() {
-  const events = await searchPublicEvents();
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q = "" } = await searchParams;
+  const events = await searchPublicEvents(q);
 
   return (
     <main className="min-h-screen">
       <section className="mx-auto w-full max-w-5xl px-6 py-8">
         <header className="mb-8 flex items-center justify-between gap-4 border-b border-slate-200 pb-6">
           <h1 className="text-3xl font-bold tracking-normal text-slate-950">
-            Find event
+            Find tournament
           </h1>
           <Button asChild size="sm" variant="outline">
             <Link href="/login">Log in</Link>
           </Button>
         </header>
 
+        <form className="mb-6 flex gap-2">
+          <Input
+            aria-label="Tournament name"
+            defaultValue={q}
+            name="q"
+            placeholder="Tournament name"
+            type="search"
+          />
+          <Button type="submit">
+            <Search className="h-4 w-4" />
+            Search
+          </Button>
+        </form>
+
         <Card>
           <CardHeader>
-            <CardTitle>Public events</CardTitle>
+            <CardTitle>Public tournaments</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {events.map((event) => (
+            {events.length > 0 ? (
+              <div className="space-y-3">
+                {events.map((event) => (
                 <Link
                   key={event.id}
                   href={`/events/${event.slug}`}
@@ -51,8 +72,13 @@ export default async function HomePage() {
                     </p>
                   </div>
                 </Link>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="py-8 text-center text-sm text-slate-500">
+                No public tournaments match your search.
+              </p>
+            )}
           </CardContent>
         </Card>
       </section>

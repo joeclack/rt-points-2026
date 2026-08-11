@@ -24,7 +24,7 @@ export default async function SignupPage({
         <CardHeader>
           <CardTitle>Create admin account</CardTitle>
           <CardDescription>
-            Admins will use Supabase Auth to create and manage events.
+            Admins will use Supabase Auth to create and manage tournaments.
           </CardDescription>
         </CardHeader>
         <CardContent>

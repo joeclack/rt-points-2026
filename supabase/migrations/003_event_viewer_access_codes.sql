@@ -97,7 +97,6 @@ begin
     'date_label', events.date_label,
     'location', events.location,
     'visibility', events.visibility,
-    'game_points_enabled', events.game_points_enabled,
     'football_enabled', events.football_enabled,
     'teams', coalesce(
       jsonb_agg(
@@ -106,8 +105,7 @@ begin
           'name', teams.name,
           'colour', teams.colour,
           'badge_text', teams.badge_text,
-          'badge_url', teams.badge_url,
-          'points', coalesce(game_points_scores.points, 0)
+          'badge_url', teams.badge_url
         )
         order by teams.created_at
       ) filter (where teams.id is not null),
@@ -118,9 +116,6 @@ begin
   from public.events
   left join public.teams
     on teams.event_id = events.id
-  left join public.game_points_scores
-    on game_points_scores.event_id = events.id
-    and game_points_scores.team_id = teams.id
   where events.slug = event_slug
     and events.visibility = 'public'
     and public.verify_event_viewer_access(event_slug, submitted_code)
@@ -139,54 +134,6 @@ using (
   exists (
     select 1 from public.events
     where events.id = teams.event_id
-      and (
-        events.owner_id = auth.uid()
-        or public.is_event_admin(events.id)
-        or (
-          events.visibility = 'public'
-          and not exists (
-            select 1
-            from public.event_viewer_access_codes
-            where event_viewer_access_codes.event_id = events.id
-          )
-        )
-      )
-  )
-);
-
-drop policy if exists "Public can read scores for visible events"
-on public.game_points_scores;
-
-create policy "Public can read scores for unlocked visible events"
-on public.game_points_scores for select
-using (
-  exists (
-    select 1 from public.events
-    where events.id = game_points_scores.event_id
-      and (
-        events.owner_id = auth.uid()
-        or public.is_event_admin(events.id)
-        or (
-          events.visibility = 'public'
-          and not exists (
-            select 1
-            from public.event_viewer_access_codes
-            where event_viewer_access_codes.event_id = events.id
-          )
-        )
-      )
-  )
-);
-
-drop policy if exists "Public can read score events for visible events"
-on public.score_events;
-
-create policy "Public can read score events for unlocked visible events"
-on public.score_events for select
-using (
-  exists (
-    select 1 from public.events
-    where events.id = score_events.event_id
       and (
         events.owner_id = auth.uid()
         or public.is_event_admin(events.id)

@@ -7,7 +7,6 @@ import {
   Monitor,
   PlusCircle,
   ShieldCheck,
-  Trophy,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -25,7 +24,7 @@ export function AdminEventNav({ eventId, eventSlug }: AdminEventNavProps) {
   const navItems = eventId && eventSlug ? [
     {
       href: "/admin/events",
-      label: "Events",
+      label: "Tournaments",
       icon: CalendarDays,
       isActive: pathname === "/admin/events",
     },
@@ -36,19 +35,13 @@ export function AdminEventNav({ eventId, eventSlug }: AdminEventNavProps) {
       isActive: pathname === `/admin/events/${eventId}`,
     },
     {
-      href: `/admin/events/${eventId}/game-points`,
-      label: "Points",
-      icon: Trophy,
-      isActive: pathname === `/admin/events/${eventId}/game-points`,
-    },
-    {
       href: `/admin/events/${eventId}/football`,
       label: "Football",
       icon: ShieldCheck,
       isActive: pathname === `/admin/events/${eventId}/football`,
     },
     {
-      href: `/events/${eventSlug}/game-points`,
+      href: `/events/${eventSlug}/football`,
       label: "Public",
       icon: Monitor,
       isActive: pathname.startsWith(`/events/${eventSlug}`),
@@ -56,7 +49,7 @@ export function AdminEventNav({ eventId, eventSlug }: AdminEventNavProps) {
   ] : [
     {
       href: "/admin/events",
-      label: "Events",
+      label: "Tournaments",
       icon: CalendarDays,
       isActive: pathname === "/admin/events",
     },
@@ -103,7 +96,7 @@ export function AdminEventNav({ eventId, eventSlug }: AdminEventNavProps) {
         <div
           className={cn(
             "mx-auto grid max-w-md gap-1",
-            navItems.length === 2 ? "grid-cols-3" : "grid-cols-6",
+            navItems.length === 2 ? "grid-cols-3" : "grid-cols-5",
           )}
         >
           {navItems.map((item) => {
@@ -119,7 +112,7 @@ export function AdminEventNav({ eventId, eventSlug }: AdminEventNavProps) {
                 key={item.href}
               >
                 <Icon className="h-4 w-4" />
-                <span className="truncate">{item.label}</span>
+                <span className="text-center leading-tight">{item.label}</span>
               </Link>
             );
           })}
@@ -129,7 +122,7 @@ export function AdminEventNav({ eventId, eventSlug }: AdminEventNavProps) {
               type="submit"
             >
               <LogOut className="h-4 w-4" />
-              <span className="truncate">Logout</span>
+              <span className="text-center leading-tight">Logout</span>
             </button>
           </form>
         </div>
