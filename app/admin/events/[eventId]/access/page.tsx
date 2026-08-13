@@ -68,7 +68,7 @@ export default async function AdminEventAccessPage({
           <CardContent className="space-y-4">
             <div className="divide-y divide-slate-200 rounded-md border border-slate-200">
               {members.map((member) => (
-                <div className="flex items-center justify-between gap-3 px-3 py-2.5" key={member.user_id}>
+                <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5" key={member.user_id}>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-slate-950">{member.display_name}</p>
                     <p className="truncate text-xs text-slate-500">{member.email}</p>
@@ -96,7 +96,7 @@ export default async function AdminEventAccessPage({
                 {q.trim().length >= 2 ? (
                   <div className="divide-y divide-slate-200 rounded-md border border-slate-200">
                     {candidates.length > 0 ? candidates.map((candidate) => (
-                      <div className="flex items-center justify-between gap-3 px-3 py-2.5" key={candidate.user_id}>
+                      <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5" key={candidate.user_id}>
                         <div className="min-w-0"><p className="truncate text-sm font-medium text-slate-950">{candidate.display_name}</p><p className="truncate text-xs text-slate-500">{candidate.email}</p></div>
                         {candidate.has_access ? <Button disabled size="sm" variant="outline">Granted</Button> : (
                           <form action={grantEventAdmin}>

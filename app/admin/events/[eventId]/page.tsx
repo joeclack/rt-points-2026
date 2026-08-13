@@ -103,7 +103,7 @@ export default async function AdminEventPage({
 
             return (
               <Link
-                className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3 px-4 py-4 transition-colors hover:bg-slate-50 sm:px-5"
+                className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 transition-colors hover:bg-slate-50 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto] sm:px-5"
                 href={section.href}
                 key={section.label}
                 prefetch={section.label === "Teams" ? false : undefined}
@@ -117,7 +117,7 @@ export default async function AdminEventPage({
                     {section.detail}
                   </span>
                 </span>
-                <span className="text-sm font-semibold text-slate-700">
+                <span className="hidden text-sm font-semibold text-slate-700 sm:block">
                   {section.value}
                 </span>
                 <ChevronRight className="h-4 w-4 text-slate-400" />

@@ -1,6 +1,7 @@
 "use client";
 
-import { Flag, Play, RotateCcw } from "lucide-react";
+import { Flag, Focus, Play, RotateCcw } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import {
@@ -21,9 +22,11 @@ import type { Team } from "@/lib/sample-data";
 
 function Hidden({
   eventId,
+  focused,
   match,
 }: {
   eventId: string;
+  focused?: boolean;
   match: BasketballMatch;
 }) {
   return (
@@ -31,16 +34,19 @@ function Hidden({
       <input name="event_id" type="hidden" value={eventId} />
       <input name="tournament_id" type="hidden" value={match.tournamentId} />
       <input name="match_id" type="hidden" value={match.id} />
+      {focused ? <input name="focused" type="hidden" value="true" /> : null}
     </>
   );
 }
 
 export function AdminBasketballMatchCard({
   eventId,
+  focused = false,
   match,
   teams,
 }: {
   eventId: string;
+  focused?: boolean;
   match: BasketballMatch;
   teams: Team[];
 }) {
@@ -120,15 +126,15 @@ export function AdminBasketballMatchCard({
             <p className="mt-2 text-4xl font-bold tabular-nums">{score}</p>
 
             {match.status === "live" ? (
-              <div className="mt-3 flex justify-center gap-1">
+              <div className="mx-auto mt-3 grid max-w-24 grid-cols-2 gap-1.5">
                 {[-1, 1, 2, 3].map((points) => (
                   <form action={adjustScore} key={points}>
-                    <Hidden eventId={eventId} match={match} />
+                    <Hidden eventId={eventId} focused={focused} match={match} />
                     <input name="side" type="hidden" value={side} />
                     <input name="points" type="hidden" value={points} />
                     <Button
                       aria-label={`${points > 0 ? "Add" : "Remove"} ${Math.abs(points)} point`}
-                      className="h-8 min-w-8 px-2"
+                      className={focused ? "h-12 w-12 px-0" : "h-10 w-10 px-0"}
                       disabled={scorePending || (points < 0 && score === 0)}
                       size="sm"
                       type="submit"
@@ -152,7 +158,7 @@ export function AdminBasketballMatchCard({
               action={updateBasketballSchedule}
               className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]"
             >
-              <Hidden eventId={eventId} match={match} />
+              <Hidden eventId={eventId} focused={focused} match={match} />
               <KickoffInput
                 defaultIso={match.tipoffAt}
                 id={`tipoff-${match.id}`}
@@ -171,7 +177,7 @@ export function AdminBasketballMatchCard({
               </PendingSubmitButton>
             </form>
             <form action={updateBasketballLifecycle}>
-              <Hidden eventId={eventId} match={match} />
+              <Hidden eventId={eventId} focused={focused} match={match} />
               <input name="command" type="hidden" value="start" />
               <PendingSubmitButton
                 className="w-full"
@@ -188,7 +194,7 @@ export function AdminBasketballMatchCard({
 
         {match.status === "live" ? (
           <form action={updateBasketballLifecycle}>
-            <Hidden eventId={eventId} match={match} />
+            <Hidden eventId={eventId} focused={focused} match={match} />
             <input name="command" type="hidden" value="finish" />
             <PendingSubmitButton
               className="w-full"
@@ -203,7 +209,7 @@ export function AdminBasketballMatchCard({
 
         {match.status === "full_time" ? (
           <form action={updateBasketballLifecycle}>
-            <Hidden eventId={eventId} match={match} />
+            <Hidden eventId={eventId} focused={focused} match={match} />
             <input name="command" type="hidden" value="reopen" />
             <PendingSubmitButton
               className="w-full"
@@ -215,6 +221,15 @@ export function AdminBasketballMatchCard({
               Reopen game
             </PendingSubmitButton>
           </form>
+        ) : null}
+
+        {match.status === "live" && !focused ? (
+          <Button asChild className="mt-3 w-full" variant="secondary">
+            <Link href={`/admin/events/${eventId}/basketball/matches/${match.id}`}>
+              <Focus className="h-4 w-4" />
+              Focus on this game
+            </Link>
+          </Button>
         ) : null}
       </div>
     </article>

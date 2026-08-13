@@ -357,7 +357,7 @@ export function FootballLiveCentre({
   const winner = tournament
     ? getFootballTournamentWinner(tournament, initialTeams)
     : null;
-  const liveMatch = useMemo(
+  const liveMatches = useMemo(
     () =>
       tournament?.matches
         .filter(
@@ -365,7 +365,7 @@ export function FootballLiveCentre({
             isLiveFootballMatch(match.status) &&
             isAllocatedMatch(match, initialTeams),
         )
-        .sort((a, b) => a.position - b.position)[0],
+        .sort((a, b) => a.position - b.position) ?? [],
     [initialTeams, tournament],
   );
   const upcomingMatches = useMemo(
@@ -402,7 +402,7 @@ export function FootballLiveCentre({
   );
 
   useEffect(() => {
-    if (!liveMatch || liveMatch.status !== "live") {
+    if (!liveMatches.some((match) => match.status === "live")) {
       setClockNow(null);
       return;
     }
@@ -412,7 +412,7 @@ export function FootballLiveCentre({
     const interval = window.setInterval(tick, 1000);
 
     return () => window.clearInterval(interval);
-  }, [liveMatch]);
+  }, [liveMatches]);
 
   useEffect(() => {
     if (isSampleData) {
@@ -637,16 +637,21 @@ export function FootballLiveCentre({
 
             <section className="mb-7">
               <h2 className="mb-3 text-base font-semibold text-slate-950">
-                Live match
+                {liveMatches.length === 1 ? "Live match" : "Live matches"}
               </h2>
-              {liveMatch ? (
-                <LiveMatch
-                  clockNow={clockNow}
-                  highlighted={highlightedMatchId === liveMatch.id}
-                  match={liveMatch}
-                  matchMinutes={matchMinutes}
-                  teams={initialTeams}
-                />
+              {liveMatches.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {liveMatches.map((match) => (
+                    <LiveMatch
+                      clockNow={clockNow}
+                      highlighted={highlightedMatchId === match.id}
+                      key={match.id}
+                      match={match}
+                      matchMinutes={matchMinutes}
+                      teams={initialTeams}
+                    />
+                  ))}
+                </div>
               ) : (
                 <div className="rounded-lg border border-slate-200 bg-white px-4 py-4">
                   <p className="flex items-center gap-2 text-sm font-medium text-slate-700">

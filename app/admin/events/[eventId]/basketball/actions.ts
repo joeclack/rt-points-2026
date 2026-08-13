@@ -92,46 +92,49 @@ export async function updateBasketballSchedule(formData: FormData) {
 }
 
 export async function updateBasketballLifecycle(formData: FormData) {
-  const context = await managedMatch(formData); const command = text(formData, "command"); const now = new Date().toISOString();
+  const context = await managedMatch(formData); const command = text(formData, "command"); const focused = text(formData, "focused") === "true"; const now = new Date().toISOString();
+  const failGame = (message: string): never => {
+    if (focused) redirect(`/admin/events/${context.eventId}/basketball/matches/${context.match.id}?error=${encodeURIComponent(message)}`);
+    fail(context.eventId, context.tournamentId, message);
+  };
   if (command === "start") {
-    if (context.match.status !== "scheduled" || !context.match.home_team_id || !context.match.away_team_id) fail(context.eventId, context.tournamentId, "This game is not ready to start");
-    const { data: live } = await context.supabase.from("basketball_matches").select("id").eq("event_id", context.eventId).eq("status", "live").neq("id", context.match.id).limit(1);
-    if (live?.length) fail(context.eventId, context.tournamentId, "Finish the current live game before starting another");
+    if (context.match.status !== "scheduled" || !context.match.home_team_id || !context.match.away_team_id) failGame("This game is not ready to start");
     const { error } = await context.supabase.from("basketball_matches").update({ status: "live", started_at: now, ended_at: null }).eq("id", context.match.id);
-    if (error) fail(context.eventId, context.tournamentId, error.message);
+    if (error) failGame(error.message);
     await context.supabase.from("basketball_tournaments").update({ status: "live" }).eq("id", context.tournamentId);
   } else if (command === "finish") {
-    if (context.match.status !== "live") fail(context.eventId, context.tournamentId, "Only a live game can finish");
-    if (context.match.home_score === context.match.away_score) fail(context.eventId, context.tournamentId, "Basketball games need a winner. Play next basket wins.");
+    if (context.match.status !== "live") failGame("Only a live game can finish");
+    if (context.match.home_score === context.match.away_score) failGame("Basketball games need a winner. Play next basket wins.");
     const winnerId = context.match.home_score > context.match.away_score ? context.match.home_team_id : context.match.away_team_id;
     const { error } = await context.supabase.from("basketball_matches").update({ status: "full_time", winner_team_id: winnerId, ended_at: now }).eq("id", context.match.id);
-    if (error) fail(context.eventId, context.tournamentId, error.message);
+    if (error) failGame(error.message);
     if (winnerId && context.match.next_match_id && context.match.next_match_slot) {
       const query = context.match.next_match_slot === "home" ? context.supabase.from("basketball_matches").update({ home_team_id: winnerId }) : context.supabase.from("basketball_matches").update({ away_team_id: winnerId });
       const { error: advanceError } = await query.eq("id", context.match.next_match_id).eq("status", "scheduled");
-      if (advanceError) fail(context.eventId, context.tournamentId, advanceError.message);
+      if (advanceError) failGame(advanceError.message);
     }
     const { data: remaining } = await context.supabase.from("basketball_matches").select("id").eq("tournament_id", context.tournamentId).not("status", "in", '(full_time,cancelled)').limit(1);
     await context.supabase.from("basketball_tournaments").update({ status: remaining?.length ? "live" : "completed" }).eq("id", context.tournamentId);
   } else if (command === "reopen") {
-    if (context.match.status !== "full_time") fail(context.eventId, context.tournamentId, "Only a finished game can be reopened");
-    const { data: live } = await context.supabase.from("basketball_matches").select("id").eq("event_id", context.eventId).eq("status", "live").neq("id", context.match.id).limit(1);
-    if (live?.length) fail(context.eventId, context.tournamentId, "Finish the current live game before reopening another");
+    if (context.match.status !== "full_time") failGame("Only a finished game can be reopened");
     if (context.match.next_match_id && context.match.next_match_slot) {
       const { data: next } = await context.supabase.from("basketball_matches").select("status,home_team_id,away_team_id").eq("id", context.match.next_match_id).single();
-      if (next && next.status !== "scheduled") fail(context.eventId, context.tournamentId, "The next knockout game has started, so this result cannot be reopened");
+      if (next && next.status !== "scheduled") failGame("The next knockout game has started, so this result cannot be reopened");
       if (next && context.match.winner_team_id) {
         const slotTeam = context.match.next_match_slot === "home" ? next.home_team_id : next.away_team_id;
         if (slotTeam === context.match.winner_team_id) {
           const clear = context.match.next_match_slot === "home" ? context.supabase.from("basketball_matches").update({ home_team_id: null }) : context.supabase.from("basketball_matches").update({ away_team_id: null });
           const { error: clearError } = await clear.eq("id", context.match.next_match_id);
-          if (clearError) fail(context.eventId, context.tournamentId, clearError.message);
+          if (clearError) failGame(clearError.message);
         }
       }
     }
     const { error } = await context.supabase.from("basketball_matches").update({ status: "live", winner_team_id: null, ended_at: null }).eq("id", context.match.id);
-    if (error) fail(context.eventId, context.tournamentId, error.message);
+    if (error) failGame(error.message);
     await context.supabase.from("basketball_tournaments").update({ status: "live" }).eq("id", context.tournamentId);
-  } else fail(context.eventId, context.tournamentId, "Game action is invalid");
-  await refresh(context.eventId, context.slug); redirect(path(context.eventId, context.tournamentId, { message: command === "start" ? "Game is live" : command === "finish" ? "Final score published" : "Game reopened" }));
+  } else failGame("Game action is invalid");
+  await refresh(context.eventId, context.slug);
+  const message = command === "start" ? "Game is live" : command === "finish" ? "Final score published" : "Game reopened";
+  if (focused) redirect(`/admin/events/${context.eventId}/basketball/matches/${context.match.id}?message=${encodeURIComponent(message)}`);
+  redirect(path(context.eventId, context.tournamentId, { message }));
 }

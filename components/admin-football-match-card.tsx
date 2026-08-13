@@ -5,11 +5,13 @@ import {
   CirclePlus,
   Clock3,
   Flag,
+  Focus,
   Pause,
   Play,
   RotateCcw,
   Save,
 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import {
@@ -35,9 +37,11 @@ import type { Team } from "@/lib/sample-data";
 
 function HiddenMatchFields({
   eventId,
+  focused,
   match,
 }: {
   eventId: string;
+  focused?: boolean;
   match: FootballMatch;
 }) {
   return (
@@ -45,6 +49,7 @@ function HiddenMatchFields({
       <input name="event_id" type="hidden" value={eventId} />
       <input name="tournament_id" type="hidden" value={match.tournamentId} />
       <input name="match_id" type="hidden" value={match.id} />
+      {focused ? <input name="focused" type="hidden" value="true" /> : null}
     </>
   );
 }
@@ -52,6 +57,7 @@ function HiddenMatchFields({
 function TeamScoreControl({
   adjustScore,
   eventId,
+  focused,
   match,
   pending,
   score,
@@ -60,6 +66,7 @@ function TeamScoreControl({
 }: {
   adjustScore: (formData: FormData) => Promise<void>;
   eventId: string;
+  focused: boolean;
   match: FootballMatch;
   pending: boolean;
   score: number;
@@ -84,19 +91,20 @@ function TeamScoreControl({
       <p className="mt-2 max-w-full truncate text-center text-sm font-semibold text-slate-900">
         {team?.name ?? "Winner TBD"}
       </p>
-      <p className="mt-2 text-5xl font-black tracking-tight text-slate-950">
+      <p className="mt-2 text-5xl font-black text-slate-950">
         {score}
       </p>
       {isLiveFootballMatch(match.status) ? (
         <div className="mt-3 grid grid-cols-2 gap-2">
           {[-1, 1].map((delta) => (
             <form action={adjustScore} key={delta}>
-              <HiddenMatchFields eventId={eventId} match={match} />
+              <HiddenMatchFields eventId={eventId} focused={focused} match={match} />
               <input name="side" type="hidden" value={side} />
               <input name="delta" type="hidden" value={delta} />
               <Button
                 aria-label={`${delta > 0 ? "Add" : "Remove"} ${team?.name ?? side} goal`}
                 disabled={pending || (delta < 0 && score === 0)}
+                className={focused ? "h-12 w-12" : undefined}
                 size="icon"
                 type="submit"
                 variant={delta > 0 ? "default" : "outline"}
@@ -117,11 +125,13 @@ function TeamScoreControl({
 
 export function AdminFootballMatchCard({
   eventId,
+  focused = false,
   match,
   matchMinutes,
   teams,
 }: {
   eventId: string;
+  focused?: boolean;
   match: FootballMatch;
   matchMinutes: number;
   teams: Team[];
@@ -185,7 +195,7 @@ export function AdminFootballMatchCard({
         : "planned";
 
   return (
-    <article className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+    <article className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="flex items-center justify-between gap-2 border-b border-slate-100 bg-slate-50 px-4 py-3">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -224,10 +234,11 @@ export function AdminFootballMatchCard({
       </div>
 
       <div className="px-4 py-5">
-        <div className="flex items-start gap-3">
+        <div className={`flex items-start gap-2 sm:gap-3 ${focused ? "py-3 sm:py-6" : ""}`}>
           <TeamScoreControl
             adjustScore={adjustScore}
             eventId={eventId}
+            focused={focused}
             match={match}
             pending={scorePending}
             score={scores.home}
@@ -240,6 +251,7 @@ export function AdminFootballMatchCard({
           <TeamScoreControl
             adjustScore={adjustScore}
             eventId={eventId}
+            focused={focused}
             match={match}
             pending={scorePending}
             score={scores.away}
@@ -254,7 +266,7 @@ export function AdminFootballMatchCard({
               action={updateFootballMatchSchedule}
               className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]"
             >
-              <HiddenMatchFields eventId={eventId} match={match} />
+              <HiddenMatchFields eventId={eventId} focused={focused} match={match} />
               <div>
                 <label
                   className="mb-1 block text-xs font-medium text-slate-600"
@@ -292,7 +304,7 @@ export function AdminFootballMatchCard({
               </PendingSubmitButton>
             </form>
             <form action={updateFootballMatchLifecycle}>
-              <HiddenMatchFields eventId={eventId} match={match} />
+              <HiddenMatchFields eventId={eventId} focused={focused} match={match} />
               <input name="command" type="hidden" value="start" />
               <PendingSubmitButton
                 className="w-full"
@@ -311,7 +323,7 @@ export function AdminFootballMatchCard({
           <div className="mt-6 grid gap-2 sm:grid-cols-2">
             {match.status === "halftime" || !match.secondHalfStartedAt ? (
               <form action={updateFootballMatchLifecycle}>
-                <HiddenMatchFields eventId={eventId} match={match} />
+                <HiddenMatchFields eventId={eventId} focused={focused} match={match} />
                 <input
                   name="command"
                   type="hidden"
@@ -336,7 +348,7 @@ export function AdminFootballMatchCard({
               action={updateFootballMatchLifecycle}
               className={match.secondHalfStartedAt ? "sm:col-span-2" : undefined}
             >
-              <HiddenMatchFields eventId={eventId} match={match} />
+              <HiddenMatchFields eventId={eventId} focused={focused} match={match} />
               <input name="command" type="hidden" value="finish" />
               <PendingSubmitButton
                 className="w-full"
@@ -352,7 +364,7 @@ export function AdminFootballMatchCard({
 
         {match.status === "full_time" ? (
           <form action={updateFootballMatchLifecycle} className="mt-6">
-            <HiddenMatchFields eventId={eventId} match={match} />
+            <HiddenMatchFields eventId={eventId} focused={focused} match={match} />
             <input name="command" type="hidden" value="reopen" />
             <PendingSubmitButton
               className="w-full"
@@ -375,7 +387,7 @@ export function AdminFootballMatchCard({
               action={setFootballMatchScore}
               className="grid grid-cols-[1fr_1fr_auto] gap-2 border-t border-slate-200 p-3"
             >
-              <HiddenMatchFields eventId={eventId} match={match} />
+              <HiddenMatchFields eventId={eventId} focused={focused} match={match} />
               <Input
                 aria-label="Home score"
                 defaultValue={scores.home}
@@ -404,6 +416,15 @@ export function AdminFootballMatchCard({
             <Clock3 className="h-3.5 w-3.5" />
             Kickoff is shown in each viewer&apos;s local time.
           </p>
+        ) : null}
+
+        {isLive && !focused ? (
+          <Button asChild className="mt-4 w-full" variant="secondary">
+            <Link href={`/admin/events/${eventId}/football/matches/${match.id}`}>
+              <Focus className="h-4 w-4" />
+              Focus on this match
+            </Link>
+          </Button>
         ) : null}
       </div>
     </article>

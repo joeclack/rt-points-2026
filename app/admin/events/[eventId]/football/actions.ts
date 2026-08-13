@@ -441,14 +441,24 @@ export async function adjustFootballMatchScore(formData: FormData) {
   const matchId = getMatchId(formData);
   const side = getText(formData, "side");
   const delta = Number(getText(formData, "delta"));
+  const focused = getText(formData, "focused") === "true";
+  const failScore = (message: string): never => {
+    if (focused) {
+      redirect(
+        `/admin/events/${eventId}/football/matches/${matchId}?error=${encodeURIComponent(message)}`,
+      );
+    }
+
+    fail(eventId, tournamentId, message);
+  };
   const context = await readManagedMatch(eventId, tournamentId, matchId);
 
   if (!["live", "halftime"].includes(context.match.status)) {
-    fail(eventId, tournamentId, "Start or reopen the match to change its score");
+    failScore("Start or reopen the match to change its score");
   }
 
   if (!["home", "away"].includes(side) || ![-1, 1].includes(delta)) {
-    fail(eventId, tournamentId, "Score change is invalid");
+    failScore("Score change is invalid");
   }
 
   const homeScore =
@@ -465,7 +475,7 @@ export async function adjustFootballMatchScore(formData: FormData) {
     .eq("id", matchId);
 
   if (error) {
-    fail(eventId, tournamentId, error.message);
+    failScore(error.message);
   }
 
   await addMatchHistory(
@@ -484,10 +494,20 @@ export async function setFootballMatchScore(formData: FormData) {
   const matchId = getMatchId(formData);
   const homeScore = Number(getText(formData, "home_score"));
   const awayScore = Number(getText(formData, "away_score"));
+  const focused = getText(formData, "focused") === "true";
+  const failScore = (message: string): never => {
+    if (focused) {
+      redirect(
+        `/admin/events/${eventId}/football/matches/${matchId}?error=${encodeURIComponent(message)}`,
+      );
+    }
+
+    fail(eventId, tournamentId, message);
+  };
   const context = await readManagedMatch(eventId, tournamentId, matchId);
 
   if (!["live", "halftime"].includes(context.match.status)) {
-    fail(eventId, tournamentId, "Start or reopen the match to correct its score");
+    failScore("Start or reopen the match to correct its score");
   }
 
   if (
@@ -496,7 +516,7 @@ export async function setFootballMatchScore(formData: FormData) {
     homeScore < 0 ||
     awayScore < 0
   ) {
-    fail(eventId, tournamentId, "Scores must be whole numbers of zero or more");
+    failScore("Scores must be whole numbers of zero or more");
   }
 
   const { error } = await context.supabase
@@ -505,7 +525,7 @@ export async function setFootballMatchScore(formData: FormData) {
     .eq("id", matchId);
 
   if (error) {
-    fail(eventId, tournamentId, error.message);
+    failScore(error.message);
   }
 
   await addMatchHistory(
@@ -516,6 +536,11 @@ export async function setFootballMatchScore(formData: FormData) {
     "Exact score correction",
   );
   await revalidateFootballPages(eventId);
+  if (focused) {
+    redirect(
+      `/admin/events/${eventId}/football/matches/${matchId}?message=Score%20corrected`,
+    );
+  }
   redirect(
     footballAdminPath(eventId, tournamentId, { message: "Score corrected" }),
   );
@@ -526,6 +551,16 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
   const tournamentId = getTournamentId(formData);
   const matchId = getMatchId(formData);
   const command = getText(formData, "command");
+  const focused = getText(formData, "focused") === "true";
+  const failMatch = (message: string): never => {
+    if (focused) {
+      redirect(
+        `/admin/events/${eventId}/football/matches/${matchId}?error=${encodeURIComponent(message)}`,
+      );
+    }
+
+    fail(eventId, tournamentId, message);
+  };
   const context = await readManagedMatch(eventId, tournamentId, matchId);
   const now = new Date().toISOString();
 
@@ -535,7 +570,7 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
       !context.match.home_team_id ||
       !context.match.away_team_id
     ) {
-      fail(eventId, tournamentId, "This match is not ready to start");
+      failMatch("This match is not ready to start");
     }
 
     const { error } = await context.supabase
@@ -549,7 +584,7 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
       .eq("id", matchId);
 
     if (error) {
-      fail(eventId, tournamentId, error.message);
+      failMatch(error.message);
     }
 
     await context.supabase
@@ -568,7 +603,7 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
       context.match.status !== "live" ||
       context.match.second_half_started_at
     ) {
-      fail(eventId, tournamentId, "Only the first half can reach half-time");
+      failMatch("Only the first half can reach half-time");
     }
 
     const { error } = await context.supabase
@@ -577,7 +612,7 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
       .eq("id", matchId);
 
     if (error) {
-      fail(eventId, tournamentId, error.message);
+      failMatch(error.message);
     }
 
     await addMatchHistory(
@@ -589,7 +624,7 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
     );
   } else if (command === "resume") {
     if (context.match.status !== "halftime") {
-      fail(eventId, tournamentId, "Only a half-time match can resume");
+      failMatch("Only a half-time match can resume");
     }
 
     const { error } = await context.supabase
@@ -598,7 +633,7 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
       .eq("id", matchId);
 
     if (error) {
-      fail(eventId, tournamentId, error.message);
+      failMatch(error.message);
     }
 
     await addMatchHistory(
@@ -610,18 +645,14 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
     );
   } else if (command === "finish") {
     if (!["live", "halftime"].includes(context.match.status)) {
-      fail(eventId, tournamentId, "Only a started match can finish");
+      failMatch("Only a started match can finish");
     }
 
     if (
       context.tournament.format === "knockout" &&
       context.match.home_score === context.match.away_score
     ) {
-      fail(
-        eventId,
-        tournamentId,
-        "Knockout matches need a winner before full-time",
-      );
+      failMatch("Knockout matches need a winner before full-time");
     }
 
     const winnerTeamId =
@@ -640,7 +671,7 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
       .eq("id", matchId);
 
     if (error) {
-      fail(eventId, tournamentId, error.message);
+      failMatch(error.message);
     }
 
     if (
@@ -661,7 +692,7 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
         .eq("status", "scheduled");
 
       if (advanceError) {
-        fail(eventId, tournamentId, advanceError.message);
+        failMatch(advanceError.message);
       }
     }
 
@@ -675,7 +706,7 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
     await refreshTournamentStatus(context);
   } else if (command === "reopen") {
     if (context.match.status !== "full_time") {
-      fail(eventId, tournamentId, "Only a completed match can be reopened");
+      failMatch("Only a completed match can be reopened");
     }
 
     if (context.match.next_match_id && context.match.next_match_slot) {
@@ -686,9 +717,7 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
         .single();
 
       if (nextMatch && nextMatch.status !== "scheduled") {
-        fail(
-          eventId,
-          tournamentId,
+        failMatch(
           "The next knockout match has started, so this result can no longer be reopened",
         );
       }
@@ -725,7 +754,7 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
       .eq("id", matchId);
 
     if (error) {
-      fail(eventId, tournamentId, error.message);
+      failMatch(error.message);
     }
 
     await context.supabase
@@ -740,10 +769,25 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
       "Result reopened for correction",
     );
   } else {
-    fail(eventId, tournamentId, "Match action is invalid");
+    failMatch("Match action is invalid");
   }
 
   await revalidateFootballPages(eventId);
+  if (focused) {
+    redirect(
+      `/admin/events/${eventId}/football/matches/${matchId}?message=${encodeURIComponent(
+        command === "start"
+          ? "Match is live"
+          : command === "halftime"
+            ? "Half-time set"
+            : command === "resume"
+              ? "Match resumed"
+              : command === "finish"
+                ? "Full-time result published"
+                : "Match reopened",
+      )}`,
+    );
+  }
   redirect(
     footballAdminPath(eventId, tournamentId, {
       message:

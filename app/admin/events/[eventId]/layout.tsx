@@ -17,7 +17,7 @@ export default async function AdminEventLayout({
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <div className="mx-auto grid w-full max-w-7xl gap-6 px-4 pb-16 pt-4 sm:px-6 md:grid-cols-[15rem_minmax(0,1fr)] md:gap-8 md:py-8">
+      <div className="mx-auto grid w-full max-w-7xl gap-5 px-3 pb-16 pt-3 sm:px-6 md:grid-cols-[15rem_minmax(0,1fr)] md:gap-8 md:py-8">
         <AdminEventSidebar
           adminRole={event.adminRole}
           eventId={event.id}
