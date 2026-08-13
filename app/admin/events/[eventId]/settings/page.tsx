@@ -72,6 +72,25 @@ export default async function AdminEventSettingsPage({
                 value={event.sport === "basketball" ? "Basketball" : "Football"}
               />
             </label>
+            {event.sport === "football" ? (
+              <label className="space-y-1.5 sm:col-span-2">
+                <span className="text-sm font-medium text-slate-700">
+                  Match length (minutes)
+                </span>
+                <Input
+                  defaultValue={event.footballMatchMinutes}
+                  max={180}
+                  min={2}
+                  name="football_match_minutes"
+                  required
+                  step={2}
+                  type="number"
+                />
+                <span className="block text-xs text-slate-500">
+                  Total playing time, split into two equal halves.
+                </span>
+              </label>
+            ) : null}
             <PendingSubmitButton className="sm:col-span-2 sm:w-fit" pendingLabel="Saving..." type="submit">
               Save changes
             </PendingSubmitButton>

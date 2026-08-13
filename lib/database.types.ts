@@ -42,6 +42,7 @@ export type Database = {
           visibility: "public" | "private";
           football_enabled: boolean;
           team_size: number;
+          football_match_minutes: number;
           sport: "football" | "basketball";
           status: "draft" | "live" | "finished";
           created_at: string;
@@ -58,6 +59,7 @@ export type Database = {
           visibility?: "public" | "private";
           football_enabled?: boolean;
           team_size?: number;
+          football_match_minutes?: number;
           sport?: "football" | "basketball";
           status?: "draft" | "live" | "finished";
           created_at?: string;
@@ -74,6 +76,7 @@ export type Database = {
           visibility?: "public" | "private";
           football_enabled?: boolean;
           team_size?: number;
+          football_match_minutes?: number;
           sport?: "football" | "basketball";
           status?: "draft" | "live" | "finished";
           created_at?: string;
@@ -393,6 +396,7 @@ export type Database = {
           next_match_id: string | null;
           next_match_slot: "home" | "away" | null;
           started_at: string | null;
+          second_half_started_at: string | null;
           ended_at: string | null;
           created_at: string;
           updated_at: string;
@@ -428,6 +432,7 @@ export type Database = {
           next_match_id?: string | null;
           next_match_slot?: "home" | "away" | null;
           started_at?: string | null;
+          second_half_started_at?: string | null;
           ended_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -463,6 +468,7 @@ export type Database = {
           next_match_id?: string | null;
           next_match_slot?: "home" | "away" | null;
           started_at?: string | null;
+          second_half_started_at?: string | null;
           ended_at?: string | null;
           created_at?: string;
           updated_at?: string;

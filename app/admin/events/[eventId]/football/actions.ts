@@ -368,7 +368,7 @@ async function readManagedMatch(
   const { data: match, error } = await supabase
     .from("football_matches")
     .select(
-      "id,tournament_id,event_id,home_team_id,away_team_id,status,home_score,away_score,next_match_id,next_match_slot,winner_team_id",
+      "id,tournament_id,event_id,home_team_id,away_team_id,status,home_score,away_score,next_match_id,next_match_slot,winner_team_id,second_half_started_at",
     )
     .eq("id", matchId)
     .eq("tournament_id", tournamentId)
@@ -540,7 +540,12 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
 
     const { error } = await context.supabase
       .from("football_matches")
-      .update({ status: "live", started_at: now, ended_at: null })
+      .update({
+        status: "live",
+        started_at: now,
+        second_half_started_at: null,
+        ended_at: null,
+      })
       .eq("id", matchId);
 
     if (error) {
@@ -559,8 +564,11 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
       "Match started",
     );
   } else if (command === "halftime") {
-    if (context.match.status !== "live") {
-      fail(eventId, tournamentId, "Only a live match can reach half-time");
+    if (
+      context.match.status !== "live" ||
+      context.match.second_half_started_at
+    ) {
+      fail(eventId, tournamentId, "Only the first half can reach half-time");
     }
 
     const { error } = await context.supabase
@@ -586,7 +594,7 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
 
     const { error } = await context.supabase
       .from("football_matches")
-      .update({ status: "live" })
+      .update({ status: "live", second_half_started_at: now })
       .eq("id", matchId);
 
     if (error) {
@@ -711,6 +719,7 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
       .update({
         status: "live",
         winner_team_id: null,
+        second_half_started_at: now,
         ended_at: null,
       })
       .eq("id", matchId);

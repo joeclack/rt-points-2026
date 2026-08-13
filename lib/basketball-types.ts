@@ -120,3 +120,22 @@ export function calculateBasketballStandings(
         a.team.name.localeCompare(b.team.name),
     );
 }
+
+export function getBasketballTournamentWinner(
+  tournament: BasketballTournament,
+  teams: Team[],
+) {
+  if (tournament.status !== "completed") {
+    return null;
+  }
+
+  if (tournament.format === "league") {
+    return calculateBasketballStandings(tournament, teams)[0]?.team ?? null;
+  }
+
+  const final = tournament.matches.find(
+    (match) => match.stage === "final" && match.status === "full_time",
+  );
+
+  return teams.find((team) => team.id === final?.winnerTeamId) ?? null;
+}

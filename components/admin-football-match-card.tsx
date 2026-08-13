@@ -1,3 +1,5 @@
+"use client";
+
 import {
   CircleMinus,
   CirclePlus,
@@ -8,6 +10,7 @@ import {
   RotateCcw,
   Save,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import {
   adjustFootballMatchScore,
@@ -21,6 +24,7 @@ import { StatusPill } from "@/components/status-pill";
 import { TeamBadge } from "@/components/team-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getFootballClock } from "@/lib/football-clock";
 import {
   footballStageLabels,
   footballStatusLabels,
@@ -46,18 +50,22 @@ function HiddenMatchFields({
 }
 
 function TeamScoreControl({
+  adjustScore,
   eventId,
   match,
+  pending,
+  score,
   side,
   team,
 }: {
+  adjustScore: (formData: FormData) => Promise<void>;
   eventId: string;
   match: FootballMatch;
+  pending: boolean;
+  score: number;
   side: "home" | "away";
   team?: Team;
 }) {
-  const score = side === "home" ? match.homeScore : match.awayScore;
-
   return (
     <div className="flex min-w-0 flex-1 flex-col items-center">
       {team ? (
@@ -82,12 +90,13 @@ function TeamScoreControl({
       {isLiveFootballMatch(match.status) ? (
         <div className="mt-3 grid grid-cols-2 gap-2">
           {[-1, 1].map((delta) => (
-            <form action={adjustFootballMatchScore} key={delta}>
+            <form action={adjustScore} key={delta}>
               <HiddenMatchFields eventId={eventId} match={match} />
               <input name="side" type="hidden" value={side} />
               <input name="delta" type="hidden" value={delta} />
               <Button
                 aria-label={`${delta > 0 ? "Add" : "Remove"} ${team?.name ?? side} goal`}
+                disabled={pending || (delta < 0 && score === 0)}
                 size="icon"
                 type="submit"
                 variant={delta > 0 ? "default" : "outline"}
@@ -109,17 +118,67 @@ function TeamScoreControl({
 export function AdminFootballMatchCard({
   eventId,
   match,
+  matchMinutes,
   teams,
 }: {
   eventId: string;
   match: FootballMatch;
+  matchMinutes: number;
   teams: Team[];
 }) {
   const homeTeam = teams.find((team) => team.id === match.homeTeamId);
   const awayTeam = teams.find((team) => team.id === match.awayTeamId);
   const isLive = isLiveFootballMatch(match.status);
+  const [scores, setScores] = useState({
+    away: match.awayScore,
+    home: match.homeScore,
+  });
+  const [scorePending, setScorePending] = useState(false);
+  const [now, setNow] = useState<number | null>(null);
+
+  useEffect(() => {
+    setScores({ away: match.awayScore, home: match.homeScore });
+  }, [match.awayScore, match.homeScore]);
+
+  useEffect(() => {
+    if (match.status !== "live") {
+      setNow(null);
+      return;
+    }
+
+    const tick = () => setNow(Date.now());
+    tick();
+    const interval = window.setInterval(tick, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [match.status, match.startedAt, match.secondHalfStartedAt]);
+
+  async function adjustScore(formData: FormData) {
+    if (scorePending) return;
+
+    const side = String(formData.get("side")) as "home" | "away";
+    const delta = Number(formData.get("delta"));
+    const previousScores = scores;
+
+    setScores((current) => ({
+      ...current,
+      [side]: Math.max(0, current[side] + delta),
+    }));
+    setScorePending(true);
+
+    try {
+      await adjustFootballMatchScore(formData);
+    } catch (error) {
+      setScores(previousScores);
+      throw error;
+    } finally {
+      setScorePending(false);
+    }
+  }
+
+  const clock = now ? getFootballClock(match, matchMinutes, now) : null;
   const statusTone =
-    match.status === "live"
+    isLive
       ? "live"
       : match.status === "full_time"
         ? "neutral"
@@ -139,16 +198,39 @@ export function AdminFootballMatchCard({
             </p>
           ) : null}
         </div>
-        <StatusPill tone={statusTone}>
-          {footballStatusLabels[match.status]}
-        </StatusPill>
+        <div className="flex shrink-0 items-center gap-3">
+          {match.status === "halftime" ? (
+            <span className="font-mono text-sm font-semibold tabular-nums text-slate-700">
+              HT
+            </span>
+          ) : clock ? (
+            <div className="text-right">
+              <p
+                className={`font-mono text-sm font-semibold tabular-nums ${
+                  clock.addedTime ? "text-red-600" : "text-slate-900"
+                }`}
+              >
+                {clock.clockLabel}
+              </p>
+              <p className="text-[0.65rem] font-medium text-slate-500">
+                {clock.addedTime ? "Added time" : clock.periodLabel}
+              </p>
+            </div>
+          ) : null}
+          <StatusPill tone={statusTone}>
+            {footballStatusLabels[match.status]}
+          </StatusPill>
+        </div>
       </div>
 
       <div className="px-4 py-5">
         <div className="flex items-start gap-3">
           <TeamScoreControl
+            adjustScore={adjustScore}
             eventId={eventId}
             match={match}
+            pending={scorePending}
+            score={scores.home}
             side="home"
             team={homeTeam}
           />
@@ -156,8 +238,11 @@ export function AdminFootballMatchCard({
             vs
           </span>
           <TeamScoreControl
+            adjustScore={adjustScore}
             eventId={eventId}
             match={match}
+            pending={scorePending}
+            score={scores.away}
             side="away"
             team={awayTeam}
           />
@@ -224,28 +309,33 @@ export function AdminFootballMatchCard({
 
         {isLive ? (
           <div className="mt-6 grid gap-2 sm:grid-cols-2">
-            <form action={updateFootballMatchLifecycle}>
-              <HiddenMatchFields eventId={eventId} match={match} />
-              <input
-                name="command"
-                type="hidden"
-                value={match.status === "halftime" ? "resume" : "halftime"}
-              />
-              <PendingSubmitButton
-                className="w-full"
-                pendingLabel="Updating..."
-                type="submit"
-                variant="outline"
-              >
-                {match.status === "halftime" ? (
-                  <Play className="h-4 w-4" />
-                ) : (
-                  <Pause className="h-4 w-4" />
-                )}
-                {match.status === "halftime" ? "Start second half" : "Half-time"}
-              </PendingSubmitButton>
-            </form>
-            <form action={updateFootballMatchLifecycle}>
+            {match.status === "halftime" || !match.secondHalfStartedAt ? (
+              <form action={updateFootballMatchLifecycle}>
+                <HiddenMatchFields eventId={eventId} match={match} />
+                <input
+                  name="command"
+                  type="hidden"
+                  value={match.status === "halftime" ? "resume" : "halftime"}
+                />
+                <PendingSubmitButton
+                  className="w-full"
+                  pendingLabel="Updating..."
+                  type="submit"
+                  variant="outline"
+                >
+                  {match.status === "halftime" ? (
+                    <Play className="h-4 w-4" />
+                  ) : (
+                    <Pause className="h-4 w-4" />
+                  )}
+                  {match.status === "halftime" ? "Start second half" : "Half-time"}
+                </PendingSubmitButton>
+              </form>
+            ) : null}
+            <form
+              action={updateFootballMatchLifecycle}
+              className={match.secondHalfStartedAt ? "sm:col-span-2" : undefined}
+            >
               <HiddenMatchFields eventId={eventId} match={match} />
               <input name="command" type="hidden" value="finish" />
               <PendingSubmitButton
@@ -288,7 +378,7 @@ export function AdminFootballMatchCard({
               <HiddenMatchFields eventId={eventId} match={match} />
               <Input
                 aria-label="Home score"
-                defaultValue={match.homeScore}
+                defaultValue={scores.home}
                 min={0}
                 name="home_score"
                 required
@@ -296,7 +386,7 @@ export function AdminFootballMatchCard({
               />
               <Input
                 aria-label="Away score"
-                defaultValue={match.awayScore}
+                defaultValue={scores.away}
                 min={0}
                 name="away_score"
                 required

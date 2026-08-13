@@ -237,6 +237,7 @@ export default async function AdminEventFootballPage({
                     eventId={event.id}
                     key={match.id}
                     match={match}
+                    matchMinutes={event.footballMatchMinutes}
                     teams={event.teams}
                   />
                 ))}

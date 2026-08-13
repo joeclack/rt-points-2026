@@ -40,6 +40,7 @@ export type FootballMatch = {
   nextMatchId: string | null;
   nextMatchSlot: "home" | "away" | null;
   startedAt: string | null;
+  secondHalfStartedAt: string | null;
   endedAt: string | null;
   updatedAt: string;
 };
@@ -170,5 +171,24 @@ export function calculateFootballStandings(
         b.goalsFor - a.goalsFor ||
         a.team.name.localeCompare(b.team.name),
     );
+}
+
+export function getFootballTournamentWinner(
+  tournament: FootballTournament,
+  teams: Team[],
+) {
+  if (tournament.status !== "completed") {
+    return null;
+  }
+
+  if (tournament.format === "league") {
+    return calculateFootballStandings(tournament, teams)[0]?.team ?? null;
+  }
+
+  const final = tournament.matches.find(
+    (match) => match.stage === "final" && match.status === "full_time",
+  );
+
+  return teams.find((team) => team.id === final?.winnerTeamId) ?? null;
 }
 

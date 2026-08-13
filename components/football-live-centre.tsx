@@ -19,8 +19,11 @@ import { AcceptedTeamsList } from "@/components/accepted-teams-list";
 import { FootballBracket } from "@/components/football-bracket";
 import { FootballStandings } from "@/components/football-standings";
 import { TeamBadge } from "@/components/team-badge";
+import { TournamentWinnerBanner } from "@/components/tournament-winner-banner";
+import { getFootballClock } from "@/lib/football-clock";
 import {
   footballStageLabels,
+  getFootballTournamentWinner,
   isLiveFootballMatch,
   type FootballMatch,
   type FootballTournament,
@@ -36,6 +39,7 @@ type FootballLiveCentreProps = {
   eventId: string;
   eventName: string;
   eventSlug: string;
+  matchMinutes: number;
   initialTeams: Team[];
   initialTournaments: FootballTournament[];
 };
@@ -70,6 +74,7 @@ type PublicFootballPayload = {
       next_match_id: string | null;
       next_match_slot: "home" | "away" | null;
       started_at: string | null;
+      second_half_started_at: string | null;
       ended_at: string | null;
       updated_at: string;
     }>;
@@ -107,6 +112,7 @@ function mapPublicFootball(payload: PublicFootballPayload) {
         nextMatchId: match.next_match_id,
         nextMatchSlot: match.next_match_slot,
         startedAt: match.started_at,
+        secondHalfStartedAt: match.second_half_started_at,
         endedAt: match.ended_at,
         updatedAt: match.updated_at,
       })),
@@ -154,12 +160,16 @@ function PublicTeam({ team }: { team: Team }) {
 }
 
 function LiveMatch({
+  clockNow,
   highlighted,
   match,
+  matchMinutes,
   teams,
 }: {
+  clockNow: number | null;
   highlighted: boolean;
   match: FootballMatch;
+  matchMinutes: number;
   teams: Team[];
 }) {
   const homeTeam = teams.find((team) => team.id === match.homeTeamId);
@@ -169,6 +179,10 @@ function LiveMatch({
     return null;
   }
 
+  const clock = clockNow
+    ? getFootballClock(match, matchMinutes, clockNow)
+    : null;
+
   return (
     <article
       className={cn(
@@ -176,11 +190,27 @@ function LiveMatch({
         highlighted && "bg-emerald-50",
       )}
     >
-      <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-2.5">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center border-b border-slate-200 bg-slate-50 px-4 py-2.5">
         <span className="text-xs font-medium text-slate-500">
           {footballStageLabels[match.stage]}
         </span>
-        <span className="flex items-center gap-1.5 text-xs font-semibold text-red-600">
+        <div className="text-center">
+          <p
+            className={`font-mono text-base font-semibold tabular-nums ${
+              clock?.addedTime ? "text-red-600" : "text-slate-950"
+            }`}
+          >
+            {match.status === "halftime" ? "HT" : clock?.clockLabel ?? "0:00"}
+          </p>
+          <p className="text-[0.65rem] font-medium text-slate-500">
+            {match.status === "halftime"
+              ? "Half-time"
+              : clock?.addedTime
+                ? "Added time"
+                : clock?.periodLabel ?? "First half"}
+          </p>
+        </div>
+        <span className="flex items-center justify-self-end gap-1.5 text-xs font-semibold text-red-600">
           <span className="h-1.5 w-1.5 rounded-full bg-red-600" />
           {match.status === "halftime" ? "HALF-TIME" : "LIVE"}
         </span>
@@ -302,6 +332,7 @@ export function FootballLiveCentre({
   eventId,
   eventName,
   eventSlug,
+  matchMinutes,
   initialTeams,
   initialTournaments,
 }: FootballLiveCentreProps) {
@@ -318,10 +349,14 @@ export function FootballLiveCentre({
   const [highlightedMatchId, setHighlightedMatchId] = useState<string | null>(
     null,
   );
+  const [clockNow, setClockNow] = useState<number | null>(null);
 
   const tournament =
     tournaments.find((item) => item.id === selectedTournamentId) ??
     tournaments[0];
+  const winner = tournament
+    ? getFootballTournamentWinner(tournament, initialTeams)
+    : null;
   const liveMatch = useMemo(
     () =>
       tournament?.matches
@@ -365,6 +400,19 @@ export function FootballLiveCentre({
         ) ?? [],
     [initialTeams, tournament],
   );
+
+  useEffect(() => {
+    if (!liveMatch || liveMatch.status !== "live") {
+      setClockNow(null);
+      return;
+    }
+
+    const tick = () => setClockNow(Date.now());
+    tick();
+    const interval = window.setInterval(tick, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [liveMatch]);
 
   useEffect(() => {
     if (isSampleData) {
@@ -580,14 +628,23 @@ export function FootballLiveCentre({
               </span>
             </section>
 
+            {winner ? (
+              <TournamentWinnerBanner
+                team={winner}
+                tournamentName={tournament.name}
+              />
+            ) : null}
+
             <section className="mb-7">
               <h2 className="mb-3 text-base font-semibold text-slate-950">
                 Live match
               </h2>
               {liveMatch ? (
                 <LiveMatch
+                  clockNow={clockNow}
                   highlighted={highlightedMatchId === liveMatch.id}
                   match={liveMatch}
+                  matchMinutes={matchMinutes}
                   teams={initialTeams}
                 />
               ) : (

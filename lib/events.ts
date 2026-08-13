@@ -16,6 +16,7 @@ type EventRow = {
   visibility: "public" | "private";
   football_enabled: boolean;
   team_size: number;
+  football_match_minutes: number;
   sport: "football" | "basketball";
 };
 
@@ -80,6 +81,7 @@ function mapEvent(
     location: row.location ?? "Location to be confirmed",
     visibility: row.visibility,
     teamSize: row.team_size,
+    footballMatchMinutes: row.football_match_minutes,
     sport: row.sport,
     teams,
     adminRole,
@@ -127,7 +129,7 @@ export async function searchPublicEvents(query = "") {
   let eventQuery = supabase
     .from("events")
     .select(
-      "id,name,slug,description,date_label,location,visibility,football_enabled,team_size,sport",
+      "id,name,slug,description,date_label,location,visibility,football_enabled,team_size,football_match_minutes,sport",
     )
     .eq("visibility", "public");
 
@@ -183,6 +185,7 @@ export async function getPublicEventShellBySlug(slug: string) {
         visibility: event.visibility,
         football_enabled: true,
         team_size: event.teamSize,
+        football_match_minutes: event.footballMatchMinutes,
         sport: event.sport,
       },
       [],
@@ -193,7 +196,7 @@ export async function getPublicEventShellBySlug(slug: string) {
   const { data: event, error } = await supabase
     .from("events")
     .select(
-      "id,name,slug,description,date_label,location,visibility,football_enabled,team_size,sport",
+      "id,name,slug,description,date_label,location,visibility,football_enabled,team_size,football_match_minutes,sport",
     )
     .eq("slug", slug)
     .eq("visibility", "public")
@@ -256,7 +259,7 @@ export async function getAdminEvents(userId?: string) {
   const { data, error } = await supabase
     .from("event_admins")
     .select(
-      "role,events!inner(id,name,slug,description,date_label,location,visibility,football_enabled,team_size,sport)",
+      "role,events!inner(id,name,slug,description,date_label,location,visibility,football_enabled,team_size,football_match_minutes,sport)",
     )
     .eq("user_id", adminUserId)
     .order("created_at", { ascending: false });
@@ -299,7 +302,7 @@ const getAdminEventByIdCached = cache(async function getAdminEventByIdCached(
   const { data: membership, error } = await supabase
     .from("event_admins")
     .select(
-      "role,events!inner(id,name,slug,description,date_label,location,visibility,football_enabled,team_size,sport,teams(id,name,colour,badge_text,badge_url),event_viewer_access_codes(access_code))",
+      "role,events!inner(id,name,slug,description,date_label,location,visibility,football_enabled,team_size,football_match_minutes,sport,teams(id,name,colour,badge_text,badge_url),event_viewer_access_codes(access_code))",
     )
     .eq("event_id", id)
     .eq("user_id", adminUserId)

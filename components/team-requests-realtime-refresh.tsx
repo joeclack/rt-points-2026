@@ -43,6 +43,11 @@ export function TeamRequestsRealtimeRefresh({ eventId }: { eventId: string }) {
         queueRefresh,
       )
       .subscribe();
+    const fallbackInterval = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        queueRefresh();
+      }
+    }, 5000);
 
     window.addEventListener("focus", refreshWhenVisible);
     document.addEventListener("visibilitychange", refreshWhenVisible);
@@ -52,6 +57,7 @@ export function TeamRequestsRealtimeRefresh({ eventId }: { eventId: string }) {
         window.clearTimeout(refreshTimeout);
       }
 
+      window.clearInterval(fallbackInterval);
       window.removeEventListener("focus", refreshWhenVisible);
       document.removeEventListener("visibilitychange", refreshWhenVisible);
       void supabase.removeChannel(channel);

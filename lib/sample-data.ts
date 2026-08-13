@@ -15,6 +15,7 @@ export type EventSummary = {
   location: string;
   visibility: "public" | "private";
   teamSize: number;
+  footballMatchMinutes: number;
   sport: "football" | "basketball";
   teams: Team[];
   viewerAccessCode?: string | null;
@@ -59,6 +60,7 @@ export const sampleEvents: EventSummary[] = [
     location: "Main auditorium",
     visibility: "public",
     teamSize: 5,
+    footballMatchMinutes: 20,
     sport: "football",
     teams: sampleTeams,
   },
@@ -72,6 +74,7 @@ export const sampleEvents: EventSummary[] = [
     location: "Main pitch",
     visibility: "public",
     teamSize: 5,
+    footballMatchMinutes: 20,
     sport: "football",
     teams: sampleTeams.slice(0, 3),
   },

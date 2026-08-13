@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { calculateBasketballStandings } from "../lib/basketball-types.ts";
+import {
+  calculateBasketballStandings,
+  getBasketballTournamentWinner,
+} from "../lib/basketball-types.ts";
 
 const teams = [
   { id: "red", name: "Red", colour: "#ef4444", badge: "R" },
@@ -49,4 +52,22 @@ test("live and scheduled basketball games do not affect final standings", () => 
   ]), teams);
 
   assert.ok(standings.every((row) => row.played === 0 && row.won === 0));
+});
+
+test("completed basketball tournament resolves league and knockout winners", () => {
+  const league = tournament([match()]);
+  league.status = "completed";
+
+  assert.equal(getBasketballTournamentWinner(league, teams)?.id, "red");
+  assert.equal(
+    getBasketballTournamentWinner(
+      {
+        ...league,
+        format: "knockout",
+        matches: [match({ stage: "final", winnerTeamId: "blue" })],
+      },
+      teams,
+    )?.id,
+    "blue",
+  );
 });

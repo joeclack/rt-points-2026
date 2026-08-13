@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { calculateFootballStandings } from "../lib/football-types.ts";
+import {
+  calculateFootballStandings,
+  getFootballTournamentWinner,
+} from "../lib/football-types.ts";
 
 const teams = [
   {
@@ -123,6 +126,29 @@ test("scheduled and cancelled matches do not affect standings", () => {
     standings.every(
       (standing) => standing.played === 0 && standing.points === 0,
     ),
+  );
+});
+
+test("completed football tournament resolves league and knockout winners", () => {
+  const league = tournamentWith([match({ homeScore: 2, awayScore: 0 })]);
+  league.status = "completed";
+
+  assert.equal(getFootballTournamentWinner(league, teams)?.id, "red");
+  assert.equal(
+    getFootballTournamentWinner(
+      {
+        ...league,
+        format: "knockout",
+        matches: [
+          match({
+            stage: "final",
+            winnerTeamId: "blue",
+          }),
+        ],
+      },
+      teams,
+    )?.id,
+    "blue",
   );
 });
 

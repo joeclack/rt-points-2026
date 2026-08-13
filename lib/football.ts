@@ -36,6 +36,7 @@ type MatchRow = {
   next_match_id: string | null;
   next_match_slot: "home" | "away" | null;
   started_at: string | null;
+  second_half_started_at: string | null;
   ended_at: string | null;
   updated_at: string;
 };
@@ -73,6 +74,7 @@ function mapMatch(row: MatchRow): FootballMatch {
     nextMatchId: row.next_match_id,
     nextMatchSlot: row.next_match_slot,
     startedAt: row.started_at,
+    secondHalfStartedAt: row.second_half_started_at,
     endedAt: row.ended_at,
     updatedAt: row.updated_at,
   };
@@ -128,6 +130,7 @@ const sampleTournament: FootballTournament = {
       nextMatchId: null,
       nextMatchSlot: null,
       startedAt: new Date().toISOString(),
+      secondHalfStartedAt: null,
       endedAt: null,
       updatedAt: new Date().toISOString(),
     },
@@ -149,6 +152,7 @@ const sampleTournament: FootballTournament = {
       nextMatchId: null,
       nextMatchSlot: null,
       startedAt: null,
+      secondHalfStartedAt: null,
       endedAt: null,
       updatedAt: new Date().toISOString(),
     },
@@ -168,7 +172,7 @@ export async function getAdminFootballTournaments(eventId: string) {
   const { data: tournaments, error } = await supabase
     .from("football_tournaments")
     .select(
-      "id,event_id,name,format,start_stage,status,win_points,draw_points,loss_points,tournament_teams:football_tournament_teams(team_id,seed),matches:football_matches(id,tournament_id,event_id,home_team_id,away_team_id,stage,round_number,position,kickoff_at,venue,status,home_score,away_score,winner_team_id,next_match_id,next_match_slot,started_at,ended_at,updated_at)",
+      "id,event_id,name,format,start_stage,status,win_points,draw_points,loss_points,tournament_teams:football_tournament_teams(team_id,seed),matches:football_matches(id,tournament_id,event_id,home_team_id,away_team_id,stage,round_number,position,kickoff_at,venue,status,home_score,away_score,winner_team_id,next_match_id,next_match_slot,started_at,second_half_started_at,ended_at,updated_at)",
     )
     .eq("event_id", eventId)
     .order("created_at", { ascending: false });

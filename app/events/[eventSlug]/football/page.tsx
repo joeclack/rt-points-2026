@@ -51,6 +51,7 @@ export default async function EventFootballPage({
       eventId={event.id}
       eventName={event.name}
       eventSlug={event.slug}
+      matchMinutes={event.footballMatchMinutes}
       initialTeams={event.teams}
       initialTournaments={tournaments}
     />

@@ -59,6 +59,17 @@ function parseTeamSize(value: FormDataEntryValue | null) {
     : null;
 }
 
+function parseFootballMatchMinutes(value: FormDataEntryValue | null) {
+  const minutes = Number(value);
+
+  return Number.isInteger(minutes) &&
+    minutes >= 2 &&
+    minutes <= 180 &&
+    minutes % 2 === 0
+    ? minutes
+    : null;
+}
+
 export async function createEvent(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
@@ -122,6 +133,11 @@ export async function updateEventDetails(formData: FormData) {
   const dateLabel = formatEventDate(eventDate);
   const location = String(formData.get("location") ?? "").trim();
   const teamSize = parseTeamSize(formData.get("team_size"));
+  const matchMinutesValue = formData.get("football_match_minutes");
+  const footballMatchMinutes =
+    matchMinutesValue === null
+      ? null
+      : parseFootballMatchMinutes(matchMinutesValue);
 
   if (!eventId) {
     redirect("/admin/events?error=Missing%20tournament");
@@ -144,6 +160,10 @@ export async function updateEventDetails(formData: FormData) {
     redirect(eventAdminSectionPath(eventId, "settings", { error: "Team size must be between 2 and 20" }));
   }
 
+  if (matchMinutesValue !== null && !footballMatchMinutes) {
+    redirect(eventAdminSectionPath(eventId, "settings", { error: "Football match length must be an even number between 2 and 180 minutes" }));
+  }
+
   const { supabase } = await requireUser();
   const { data: event, error } = await supabase
     .from("events")
@@ -153,6 +173,9 @@ export async function updateEventDetails(formData: FormData) {
       date_label: dateLabel,
       location,
       team_size: teamSize,
+      ...(footballMatchMinutes
+        ? { football_match_minutes: footballMatchMinutes }
+        : {}),
     })
     .eq("id", eventId)
     .select("slug,sport")
