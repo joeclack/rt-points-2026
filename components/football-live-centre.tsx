@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+import { AcceptedTeamsList } from "@/components/accepted-teams-list";
 import { FootballBracket } from "@/components/football-bracket";
 import { FootballStandings } from "@/components/football-standings";
 import { TeamBadge } from "@/components/team-badge";
@@ -650,6 +651,10 @@ export function FootballLiveCentre({
             ) : null}
           </>
         )}
+
+        <div className="mt-7">
+          <AcceptedTeamsList teams={initialTeams} />
+        </div>
       </div>
     </main>
   );

@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { isSupabaseConfigured } from "@/lib/auth";
@@ -83,5 +84,7 @@ export async function submitTeamJoinRequest(formData: FormData) {
     fail(eventSlug, error.message);
   }
 
+  revalidatePath("/admin/events", "layout");
+  revalidatePath(`/events/${eventSlug}`);
   redirect(submittedPath(eventSlug));
 }

@@ -1,3 +1,5 @@
+import { unstable_noStore as noStore } from "next/cache";
+
 import { isSupabaseConfigured } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
@@ -26,6 +28,8 @@ type TeamJoinRequestRow = {
 };
 
 export async function getPendingTeamJoinRequests(eventId: string) {
+  noStore();
+
   if (!isSupabaseConfigured()) {
     return [];
   }
@@ -40,7 +44,11 @@ export async function getPendingTeamJoinRequests(eventId: string) {
     .eq("status", "pending")
     .order("created_at", { ascending: true });
 
-  if (error || !data) {
+  if (error) {
+    throw new Error(`Unable to load pending team requests: ${error.message}`);
+  }
+
+  if (!data) {
     return [];
   }
 

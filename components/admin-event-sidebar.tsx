@@ -112,7 +112,7 @@ export function AdminEventSidebar({
                 className={itemClass(isActive(item.href))}
                 href={item.href}
                 key={item.href}
-                prefetch
+                prefetch={item.label === "Teams" ? false : undefined}
               >
                 <Icon className="h-4 w-4" />
                 {item.label}

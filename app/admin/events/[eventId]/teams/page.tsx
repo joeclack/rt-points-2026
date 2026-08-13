@@ -1,8 +1,11 @@
 import { AdminTeamJoinRequests } from "@/components/admin-team-join-requests";
 import { AdminTeamControls } from "@/components/admin-team-controls";
+import { TeamRequestsRealtimeRefresh } from "@/components/team-requests-realtime-refresh";
 import { requireAdminUser } from "@/lib/auth";
 import { getAdminEventById } from "@/lib/events";
 import { getPendingTeamJoinRequests } from "@/lib/team-join-requests";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminEventTeamsPage({
   params,
@@ -21,6 +24,7 @@ export default async function AdminEventTeamsPage({
 
   return (
     <div className="mx-auto w-full max-w-5xl">
+      <TeamRequestsRealtimeRefresh eventId={event.id} />
       <header className="mb-6 border-b border-slate-200 pb-5">
         <h1 className="text-2xl font-semibold text-slate-950">Teams</h1>
         <p className="mt-1 text-sm text-slate-500">

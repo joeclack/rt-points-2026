@@ -112,7 +112,9 @@ export default async function AdminEventFootballPage({
               creating fixtures.
             </p>
             <Button asChild variant="outline">
-              <Link href={`/admin/events/${event.id}/teams`}>Manage teams</Link>
+              <Link href={`/admin/events/${event.id}/teams`} prefetch={false}>
+                Manage teams
+              </Link>
             </Button>
           </CardContent>
         </Card>

@@ -11,6 +11,7 @@ import {
 import Link from "next/link";
 
 import { StatusPill } from "@/components/status-pill";
+import { TeamRequestsRealtimeRefresh } from "@/components/team-requests-realtime-refresh";
 import { requireAdminUser } from "@/lib/auth";
 import { getAdminBasketballTournaments } from "@/lib/basketball";
 import { getAdminEventById } from "@/lib/events";
@@ -68,6 +69,7 @@ export default async function AdminEventPage({
 
   return (
     <div className="mx-auto w-full max-w-5xl">
+      <TeamRequestsRealtimeRefresh eventId={event.id} />
       <header className="mb-6 border-b border-slate-200 pb-6">
         <div className="flex flex-wrap items-center gap-2">
           <StatusPill tone="live">
@@ -100,6 +102,7 @@ export default async function AdminEventPage({
                 className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3 px-4 py-4 transition-colors hover:bg-slate-50 sm:px-5"
                 href={section.href}
                 key={section.label}
+                prefetch={section.label === "Teams" ? false : undefined}
               >
                 <Icon className="h-5 w-5 text-slate-500" />
                 <span className="min-w-0">

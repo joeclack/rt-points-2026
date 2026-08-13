@@ -28,6 +28,9 @@ supabase/migrations/004_event_admin_collaborators.sql
 supabase/migrations/005_football_tournaments.sql
 supabase/migrations/006_remove_game_points_and_reset_users.sql
 supabase/migrations/007_team_join_requests.sql
+supabase/migrations/008_configurable_team_size.sql
+supabase/migrations/009_basketball_tournaments.sql
+supabase/migrations/010_team_request_realtime.sql
 ```
 
 Migration `006` is intentionally destructive when upgrading an existing
@@ -47,6 +50,7 @@ The schema creates:
 - Public read policies for visible events
 - Admin-only write policies for owned/admin events
 - Supabase Realtime publication for football matches and tournaments
+- Supabase Realtime updates for pending team requests
 
 The third migration adds optional viewer access codes. The fourth adds
 event-admin collaborators while keeping event ownership and deletion restricted

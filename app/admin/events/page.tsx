@@ -58,7 +58,7 @@ export default async function AdminEventsPage() {
                   </p>
                   <div className="grid gap-2 sm:grid-cols-2">
                     <Button asChild>
-                      <Link href={`/admin/events/${event.id}`} prefetch>
+                      <Link href={`/admin/events/${event.id}`}>
                         Manage tournament
                       </Link>
                     </Button>
