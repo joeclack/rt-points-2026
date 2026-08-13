@@ -1,5 +1,6 @@
 import { createEvent } from "@/app/admin/events/actions";
-import { Button } from "@/components/ui/button";
+import { EventSportFields } from "@/components/event-sport-fields";
+import { PendingSubmitButton } from "@/components/pending-submit-button";
 import {
   Card,
   CardContent,
@@ -25,6 +26,7 @@ export default async function NewEventPage({
         </CardHeader>
         <CardContent>
           <form action={createEvent} className="space-y-4">
+            <EventSportFields />
             <Input
               defaultValue="The Jesus Generation"
               name="name"
@@ -32,16 +34,25 @@ export default async function NewEventPage({
               required
             />
             <Input name="description" placeholder="Short description" />
-            <Input name="date_label" placeholder="Date or date range" />
+            <label className="block space-y-1.5">
+              <span className="text-sm font-medium text-slate-700">
+                Tournament date
+              </span>
+              <Input name="event_date" required type="date" />
+            </label>
             <Input name="location" placeholder="Location" />
             {error ? (
               <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
                 {error}
               </p>
             ) : null}
-            <Button className="w-full" type="submit">
+            <PendingSubmitButton
+              className="w-full"
+              pendingLabel="Creating..."
+              type="submit"
+            >
               Create tournament
-            </Button>
+            </PendingSubmitButton>
           </form>
         </CardContent>
       </Card>

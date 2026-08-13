@@ -1,21 +1,17 @@
-import { ListOrdered, ShieldCheck } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarDays,
+  ChevronRight,
+  MapPin,
+  Monitor,
+  UsersRound,
+} from "lucide-react";
 import Link from "next/link";
 
 import { EventAccessCodeForm } from "@/components/event-access-code-form";
-import { TeamBadge } from "@/components/team-badge";
-import { TeamJoinForm } from "@/components/team-join-form";
-import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  eventRequiresViewerAccess,
   getPublicEventBySlug,
   getPublicEventShellBySlug,
-  verifyViewerAccess,
 } from "@/lib/events";
 import { getViewerAccessCode } from "@/lib/viewer-access";
 
@@ -24,25 +20,16 @@ export default async function EventDetailPage({
   searchParams,
 }: {
   params: Promise<{ eventSlug: string }>;
-  searchParams: Promise<{
-    error?: string;
-    join_error?: string;
-    join_message?: string;
-  }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { eventSlug } = await params;
-  const { error, join_error: joinError, join_message: joinMessage } =
-    await searchParams;
-  const shellEvent = await getPublicEventShellBySlug(eventSlug);
-  const requiresAccess = await eventRequiresViewerAccess(eventSlug);
+  const { error } = await searchParams;
   const savedAccessCode = await getViewerAccessCode(eventSlug);
-  const hasAccess =
-    !requiresAccess ||
-    (savedAccessCode
-      ? await verifyViewerAccess(eventSlug, savedAccessCode)
-      : false);
+  const event = await getPublicEventBySlug(eventSlug, savedAccessCode);
 
-  if (!hasAccess) {
+  if (!event) {
+    const shellEvent = await getPublicEventShellBySlug(eventSlug);
+
     return (
       <EventAccessCodeForm
         eventName={shellEvent.name}
@@ -53,63 +40,79 @@ export default async function EventDetailPage({
     );
   }
 
-  const event = await getPublicEventBySlug(eventSlug, savedAccessCode);
+  const actions = [
+    {
+      description:
+        event.sport === "basketball"
+          ? "Games, live points, results and standings"
+          : "Fixtures, live scores, results and standings",
+      href: `/events/${event.slug}/${event.sport}`,
+      icon: Monitor,
+      label: "View tournament",
+    },
+    {
+      description: `Enter a ${event.teamSize}-player team for admin approval`,
+      href: `/events/${event.slug}/join`,
+      icon: UsersRound,
+      label: "Submit team",
+    },
+  ];
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center px-6 py-10">
-      <div className="mb-8 max-w-3xl">
-        <h1 className="text-5xl font-bold tracking-normal text-slate-950">
-          {event.name}
-        </h1>
-      </div>
+    <main className="min-h-screen bg-slate-50">
+      <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-10">
+        <Link
+          className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-950"
+          href="/"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Tournaments
+        </Link>
 
-      <div className="grid gap-4">
-        <Card>
-          <CardHeader>
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-slate-950 text-white">
-              <ShieldCheck className="h-6 w-6" />
-            </div>
-            <CardTitle>Football</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button asChild className="w-full">
-              <Link href={`/events/${event.slug}/football`}>
-                Open match centre
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+        <header className="border-b border-slate-200 pb-6">
+          <h1 className="text-3xl font-semibold text-slate-950 sm:text-4xl">
+            {event.name}
+          </h1>
+          {event.description ? (
+            <p className="mt-3 max-w-2xl text-slate-600">{event.description}</p>
+          ) : null}
+          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-500">
+            <span className="flex items-center gap-1.5">
+              <CalendarDays className="h-4 w-4" />
+              {event.dateLabel}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <MapPin className="h-4 w-4" />
+              {event.location}
+            </span>
+          </div>
+        </header>
 
-      <div className="mt-6">
-        <TeamJoinForm
-          error={joinError}
-          eventSlug={event.slug}
-          message={joinMessage}
-        />
-      </div>
+        <div className="mt-6 overflow-hidden rounded-lg border border-slate-200 bg-white">
+          <div className="divide-y divide-slate-100">
+            {actions.map((action) => {
+              const Icon = action.icon;
 
-      <div className="mt-6 rounded-lg border border-border bg-white p-6">
-        <div className="flex items-center gap-3">
-          <ListOrdered className="h-5 w-5 text-slate-500" />
-          <h2 className="text-lg font-semibold text-slate-950">Teams</h2>
-        </div>
-        <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          {event.teams.map((team) => (
-            <div
-              key={team.id}
-              className="flex items-center justify-between rounded-md bg-slate-50 px-4 py-3"
-            >
-              <span className="font-medium text-slate-800">{team.name}</span>
-              <TeamBadge
-                badge={team.badge}
-                badgeUrl={team.badgeUrl}
-                className="h-8 w-8 text-sm"
-                colour={team.colour}
-                name={team.name}
-              />
-            </div>
-          ))}
+              return (
+                <Link
+                  className="flex items-center gap-4 px-4 py-5 transition-colors hover:bg-slate-50 sm:px-5"
+                  href={action.href}
+                  key={action.label}
+                >
+                  <Icon className="h-5 w-5 shrink-0 text-slate-500" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-semibold text-slate-950">
+                      {action.label}
+                    </span>
+                    <span className="mt-0.5 block text-sm text-slate-500">
+                      {action.description}
+                    </span>
+                  </span>
+                  <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" />
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </div>
     </main>

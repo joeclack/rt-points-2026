@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { login } from "@/app/auth/actions";
+import { PendingSubmitButton } from "@/components/pending-submit-button";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -49,9 +50,13 @@ export default async function LoginPage({
                 {error}
               </p>
             ) : null}
-            <Button className="w-full" type="submit">
+            <PendingSubmitButton
+              className="w-full"
+              pendingLabel="Logging in..."
+              type="submit"
+            >
               Log in
-            </Button>
+            </PendingSubmitButton>
           </form>
           <Button asChild className="mt-3 w-full" type="button" variant="outline">
             <Link href="/signup">Create account</Link>

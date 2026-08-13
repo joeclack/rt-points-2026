@@ -38,36 +38,3 @@ body {
     radial-gradient(circle at 82% 10%, rgba(245, 158, 11, 0.18), transparent 28%),
     linear-gradient(135deg, #07111f 0%, #122033 54%, #08131f 100%);
 }
-
-.football-display {
-  background:
-    radial-gradient(circle at 15% 5%, rgba(34, 211, 238, 0.13), transparent 28%),
-    radial-gradient(circle at 90% 20%, rgba(16, 185, 129, 0.12), transparent 30%),
-    linear-gradient(160deg, #020617 0%, #07111f 46%, #020617 100%);
-}
-
-.football-pitch::before {
-  background:
-    linear-gradient(
-      90deg,
-      transparent 49.7%,
-      rgba(255, 255, 255, 0.09) 49.7%,
-      rgba(255, 255, 255, 0.09) 50.3%,
-      transparent 50.3%
-    ),
-    radial-gradient(
-      circle at center,
-      transparent 0 16%,
-      rgba(255, 255, 255, 0.08) 16.3% 16.9%,
-      transparent 17.2%
-    ),
-    repeating-linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0.025) 0 12.5%,
-      transparent 12.5% 25%
-    );
-  content: "";
-  inset: 0;
-  pointer-events: none;
-  position: absolute;
-}

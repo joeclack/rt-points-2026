@@ -1,10 +1,10 @@
+import { notFound, redirect } from "next/navigation";
+
 import { EventAccessCodeForm } from "@/components/event-access-code-form";
 import { FootballLiveCentre } from "@/components/football-live-centre";
 import {
-  eventRequiresViewerAccess,
   getPublicEventBySlug,
   getPublicEventShellBySlug,
-  verifyViewerAccess,
 } from "@/lib/events";
 import { getPublicFootballTournaments } from "@/lib/football";
 import { getViewerAccessCode } from "@/lib/viewer-access";
@@ -18,16 +18,15 @@ export default async function EventFootballPage({
 }) {
   const { eventSlug } = await params;
   const { error } = await searchParams;
-  const shellEvent = await getPublicEventShellBySlug(eventSlug);
-  const requiresAccess = await eventRequiresViewerAccess(eventSlug);
   const savedAccessCode = await getViewerAccessCode(eventSlug);
-  const hasAccess =
-    !requiresAccess ||
-    (savedAccessCode
-      ? await verifyViewerAccess(eventSlug, savedAccessCode)
-      : false);
+  const [event, tournaments] = await Promise.all([
+    getPublicEventBySlug(eventSlug, savedAccessCode),
+    getPublicFootballTournaments(eventSlug, savedAccessCode),
+  ]);
 
-  if (!hasAccess) {
+  if (!event) {
+    const shellEvent = await getPublicEventShellBySlug(eventSlug);
+
     return (
       <EventAccessCodeForm
         eventName={shellEvent.name}
@@ -38,11 +37,13 @@ export default async function EventFootballPage({
     );
   }
 
-  const event = await getPublicEventBySlug(eventSlug, savedAccessCode);
-  const tournaments = await getPublicFootballTournaments(
-    eventSlug,
-    savedAccessCode,
-  );
+  if (event.sport !== "football") {
+    redirect(`/events/${event.slug}/basketball`);
+  }
+
+  if (!tournaments) {
+    notFound();
+  }
 
   return (
     <FootballLiveCentre

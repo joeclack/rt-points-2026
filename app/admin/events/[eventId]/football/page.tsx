@@ -6,12 +6,11 @@ import {
   Trophy,
 } from "lucide-react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { addFootballMatch } from "@/app/admin/events/[eventId]/football/actions";
 import { AdminFootballMatchCard } from "@/components/admin-football-match-card";
 import { AdminFootballTournamentForm } from "@/components/admin-football-tournament-form";
-import { AdminTeamJoinRequests } from "@/components/admin-team-join-requests";
-import { AdminTeamControls } from "@/components/admin-team-controls";
 import { FootballAdminRealtimeRefresh } from "@/components/football-admin-realtime-refresh";
 import { FootballBracket } from "@/components/football-bracket";
 import { FootballStandings } from "@/components/football-standings";
@@ -28,7 +27,6 @@ import { Input } from "@/components/ui/input";
 import { requireAdminUser } from "@/lib/auth";
 import { getAdminEventById } from "@/lib/events";
 import { getAdminFootballTournaments } from "@/lib/football";
-import { getPendingTeamJoinRequests } from "@/lib/team-join-requests";
 
 export default async function AdminEventFootballPage({
   params,
@@ -45,15 +43,17 @@ export default async function AdminEventFootballPage({
   const { eventId } = await params;
   const { error, message, tournament: selectedTournamentId } =
     await searchParams;
-  const [event, tournaments, joinRequests] = await Promise.all([
-    getAdminEventById(eventId, user?.id, { includeTeams: true }),
+  const [event, tournaments] = await Promise.all([
+    getAdminEventById(eventId, user?.id),
     getAdminFootballTournaments(eventId),
-    getPendingTeamJoinRequests(eventId),
   ]);
   const selectedTournament =
     tournaments.find(
       (tournament) => tournament.id === selectedTournamentId,
     ) ?? tournaments[0];
+  if (event.sport !== "football") {
+    redirect(`/admin/events/${event.id}/basketball`);
+  }
   const tournamentTeams = selectedTournament
     ? event.teams.filter((team) =>
         selectedTournament.teamIds.includes(team.id),
@@ -101,10 +101,6 @@ export default async function AdminEventFootballPage({
         </p>
       ) : null}
 
-      <AdminTeamJoinRequests eventId={event.id} requests={joinRequests} />
-
-      <AdminTeamControls eventId={event.id} teams={event.teams} />
-
       {event.teams.length < 2 ? (
         <Card>
           <CardHeader>
@@ -112,8 +108,12 @@ export default async function AdminEventFootballPage({
           </CardHeader>
           <CardContent>
             <p className="mb-4 text-sm text-slate-600">
-              Add at least two football teams before creating fixtures.
+              Add at least two football teams from the Teams page before
+              creating fixtures.
             </p>
+            <Button asChild variant="outline">
+              <Link href={`/admin/events/${event.id}/teams`}>Manage teams</Link>
+            </Button>
           </CardContent>
         </Card>
       ) : (

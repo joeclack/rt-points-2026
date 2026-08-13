@@ -4,8 +4,8 @@ import { Brackets, Check, ListOrdered } from "lucide-react";
 import { useState } from "react";
 
 import { createFootballTournament } from "@/app/admin/events/[eventId]/football/actions";
+import { PendingSubmitButton } from "@/components/pending-submit-button";
 import { TeamBadge } from "@/components/team-badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { Team } from "@/lib/sample-data";
@@ -170,9 +170,13 @@ export function AdminFootballTournamentForm({
         </div>
       </fieldset>
 
-      <Button className="w-full sm:w-auto" type="submit">
+      <PendingSubmitButton
+        className="w-full sm:w-auto"
+        pendingLabel="Creating fixtures..."
+        type="submit"
+      >
         Create tournament & fixtures
-      </Button>
+      </PendingSubmitButton>
     </form>
   );
 }

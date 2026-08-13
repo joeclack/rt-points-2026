@@ -1,7 +1,7 @@
 import { Send, UsersRound } from "lucide-react";
 
 import { submitTeamJoinRequest } from "@/app/events/[eventSlug]/join/actions";
-import { Button } from "@/components/ui/button";
+import { PendingSubmitButton } from "@/components/pending-submit-button";
 import {
   Card,
   CardContent,
@@ -13,31 +13,29 @@ import { Input } from "@/components/ui/input";
 export function TeamJoinForm({
   eventSlug,
   error,
-  message,
+  teamSize,
 }: {
   eventSlug: string;
   error?: string;
-  message?: string;
+  teamSize: number;
 }) {
-  const playerFields = [
-    { label: "Your name (team leader)", name: "player_1" },
-    { label: "Player 2", name: "player_2" },
-    { label: "Player 3", name: "player_3" },
-    { label: "Player 4", name: "player_4" },
-    { label: "Player 5", name: "player_5" },
-  ];
+  const playerFields = Array.from({ length: teamSize }, (_, index) => ({
+    label: index === 0 ? "Your name (team leader)" : `Player ${index + 1}`,
+    name: `player_${index + 1}`,
+  }));
 
   return (
     <Card id="join">
       <CardHeader>
-        <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-md bg-cyan-100 text-cyan-800">
-          <UsersRound className="h-5 w-5" />
-        </div>
-        <CardTitle>Submit your team</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <UsersRound className="h-5 w-5 text-slate-500" />
+          Submit your team
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <form action={submitTeamJoinRequest} className="space-y-5">
           <input name="event_slug" type="hidden" value={eventSlug} />
+          <input name="team_size" type="hidden" value={teamSize} />
 
           <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_7rem]">
             <label className="space-y-1.5">
@@ -67,7 +65,7 @@ export function TeamJoinForm({
 
           <fieldset>
             <legend className="mb-3 text-sm font-semibold text-slate-950">
-              Five-player squad
+              {teamSize}-player squad
             </legend>
             <div className="grid gap-3 sm:grid-cols-2">
               {playerFields.map((field, index) => (
@@ -90,21 +88,20 @@ export function TeamJoinForm({
             </div>
           </fieldset>
 
-          {message ? (
-            <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">
-              {message}
-            </p>
-          ) : null}
           {error ? (
             <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
               {error}
             </p>
           ) : null}
 
-          <Button className="w-full" type="submit">
+          <PendingSubmitButton
+            className="w-full"
+            pendingLabel="Submitting..."
+            type="submit"
+          >
             <Send className="h-4 w-4" />
             Send join request
-          </Button>
+          </PendingSubmitButton>
         </form>
       </CardContent>
     </Card>

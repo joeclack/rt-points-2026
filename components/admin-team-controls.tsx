@@ -8,6 +8,7 @@ import {
   deleteTeam,
   updateTeam,
 } from "@/app/admin/events/[eventId]/teams/actions";
+import { PendingSubmitButton } from "@/components/pending-submit-button";
 import { TeamBadge } from "@/components/team-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -135,10 +136,14 @@ export function AdminTeamControls({ eventId, teams }: AdminTeamControlsProps) {
                             placeholder="Badge image URL"
                             type="url"
                           />
-                          <Button className="w-full" type="submit">
+                          <PendingSubmitButton
+                            className="w-full"
+                            pendingLabel="Saving..."
+                            type="submit"
+                          >
                             <Save className="h-4 w-4" />
                             Save team
-                          </Button>
+                          </PendingSubmitButton>
                         </form>
 
                         <form
@@ -153,14 +158,15 @@ export function AdminTeamControls({ eventId, teams }: AdminTeamControlsProps) {
                             name="confirm"
                             placeholder="Type DELETE"
                           />
-                          <Button
+                          <PendingSubmitButton
                             className="w-full"
+                            pendingLabel="Deleting..."
                             type="submit"
                             variant="secondary"
                           >
                             <Trash2 className="h-4 w-4" />
                             Delete team
-                          </Button>
+                          </PendingSubmitButton>
                         </form>
                       </div>
                     </DialogContent>
@@ -196,10 +202,14 @@ export function AdminTeamControls({ eventId, teams }: AdminTeamControlsProps) {
               />
             </div>
             <Input name="badge_url" placeholder="Badge image URL" type="url" />
-            <Button className="w-full" type="submit">
+            <PendingSubmitButton
+              className="w-full"
+              pendingLabel="Adding..."
+              type="submit"
+            >
               <Plus className="h-4 w-4" />
               Add team
-            </Button>
+            </PendingSubmitButton>
           </form>
         </CardContent>
       </Card>

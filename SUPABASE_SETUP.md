@@ -56,6 +56,26 @@ access-code-aware public reads, RLS and Realtime publication.
 The seventh adds public team applications, five-player rosters, profanity
 validation and atomic admin acceptance or rejection.
 
+## Confirmation Email
+
+In the Supabase Dashboard, open **Authentication > Email Templates > Confirm signup**.
+
+- Subject: `Confirm your email address`
+- Body: use `supabase/templates/confirm-signup.html`
+
+The template uses Supabase's `{{ .ConfirmationURL }}` variable for the confirmation
+button. Keep that placeholder unchanged when pasting the HTML into the dashboard.
+
+## Password Recovery Email
+
+In the Supabase Dashboard, open **Authentication > Email Templates > Reset password**.
+
+- Subject: `Reset your password`
+- Body: use `supabase/templates/recovery.html`
+
+This template also uses `{{ .ConfirmationURL }}`. Keep the placeholder unchanged
+when pasting the HTML into the dashboard.
+
 ## Auth Flow
 
 - Admins sign up or log in with Supabase Auth.

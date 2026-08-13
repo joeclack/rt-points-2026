@@ -1,5 +1,3 @@
-import { notFound } from "next/navigation";
-
 import type {
   FootballMatch,
   FootballTournament,
@@ -49,6 +47,11 @@ type PublicFootballPayload = {
       matches: MatchRow[];
     }
   >;
+};
+
+type AdminTournamentRow = TournamentRow & {
+  tournament_teams: Array<{ team_id: string; seed: number }>;
+  matches: MatchRow[];
 };
 
 function mapMatch(row: MatchRow): FootballMatch {
@@ -165,7 +168,7 @@ export async function getAdminFootballTournaments(eventId: string) {
   const { data: tournaments, error } = await supabase
     .from("football_tournaments")
     .select(
-      "id,event_id,name,format,start_stage,status,win_points,draw_points,loss_points",
+      "id,event_id,name,format,start_stage,status,win_points,draw_points,loss_points,tournament_teams:football_tournament_teams(team_id,seed),matches:football_matches(id,tournament_id,event_id,home_team_id,away_team_id,stage,round_number,position,kickoff_at,venue,status,home_score,away_score,winner_team_id,next_match_id,next_match_slot,started_at,ended_at,updated_at)",
     )
     .eq("event_id", eventId)
     .order("created_at", { ascending: false });
@@ -174,40 +177,15 @@ export async function getAdminFootballTournaments(eventId: string) {
     throw new Error(error.message);
   }
 
-  if (!tournaments?.length) {
-    return [];
-  }
-
-  const tournamentIds = tournaments.map((tournament) => tournament.id);
-  const [{ data: tournamentTeams }, { data: matches, error: matchesError }] =
-    await Promise.all([
-      supabase
-        .from("football_tournament_teams")
-        .select("tournament_id,team_id,seed")
-        .in("tournament_id", tournamentIds)
-        .order("seed"),
-      supabase
-        .from("football_matches")
-        .select(
-          "id,tournament_id,event_id,home_team_id,away_team_id,stage,round_number,position,kickoff_at,venue,status,home_score,away_score,winner_team_id,next_match_id,next_match_slot,started_at,ended_at,updated_at",
-        )
-        .in("tournament_id", tournamentIds)
-        .order("round_number")
-        .order("position"),
-    ]);
-
-  if (matchesError) {
-    throw new Error(matchesError.message);
-  }
-
-  return tournaments.map((tournament) =>
+  return (tournaments as unknown as AdminTournamentRow[]).map((tournament) =>
     mapTournament(
       tournament,
-      (tournamentTeams ?? [])
-        .filter((row) => row.tournament_id === tournament.id)
+      [...tournament.tournament_teams]
+        .sort((a, b) => a.seed - b.seed)
         .map((row) => row.team_id),
-      (matches ?? []).filter(
-        (match) => match.tournament_id === tournament.id,
+      [...tournament.matches].sort(
+        (a, b) =>
+          a.round_number - b.round_number || a.position - b.position,
       ),
     ),
   );
@@ -231,7 +209,7 @@ export async function getPublicFootballTournaments(
   );
 
   if (error || !data) {
-    notFound();
+    return null;
   }
 
   const payload = data as unknown as PublicFootballPayload;

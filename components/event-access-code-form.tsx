@@ -1,5 +1,5 @@
 import { submitViewerAccessCode } from "@/app/events/[eventSlug]/actions";
-import { Button } from "@/components/ui/button";
+import { PendingSubmitButton } from "@/components/pending-submit-button";
 import {
   Card,
   CardContent,
@@ -42,9 +42,13 @@ export function EventAccessCodeForm({
                 {error}
               </p>
             ) : null}
-            <Button className="w-full" type="submit">
+            <PendingSubmitButton
+              className="w-full"
+              pendingLabel="Checking..."
+              type="submit"
+            >
               Continue
-            </Button>
+            </PendingSubmitButton>
           </form>
         </CardContent>
       </Card>

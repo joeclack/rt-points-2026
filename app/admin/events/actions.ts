@@ -6,11 +6,6 @@ import { redirect } from "next/navigation";
 import { createSlug } from "@/lib/slugs";
 import { createClient } from "@/lib/supabase/server";
 
-function eventAdminPath(eventId: string, params: Record<string, string>) {
-  const searchParams = new URLSearchParams(params);
-  return `/admin/events/${eventId}?${searchParams.toString()}`;
-}
-
 async function requireUser() {
   const supabase = await createClient();
   const {
@@ -24,14 +19,68 @@ async function requireUser() {
   return { supabase, user };
 }
 
+function eventAdminSectionPath(
+  eventId: string,
+  section: "access" | "settings",
+  params: Record<string, string>,
+) {
+  const searchParams = new URLSearchParams(params);
+  return `/admin/events/${eventId}/${section}?${searchParams.toString()}`;
+}
+
+function formatEventDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return null;
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "long",
+    timeZone: "UTC",
+    year: "numeric",
+  }).format(date);
+}
+
+function parseTeamSize(value: FormDataEntryValue | null) {
+  const teamSize = Number(value);
+  return Number.isInteger(teamSize) && teamSize >= 2 && teamSize <= 20
+    ? teamSize
+    : null;
+}
+
 export async function createEvent(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
-  const dateLabel = String(formData.get("date_label") ?? "").trim();
+  const eventDate = String(formData.get("event_date") ?? "").trim();
+  const dateLabel = formatEventDate(eventDate);
   const location = String(formData.get("location") ?? "").trim();
+  const teamSize = parseTeamSize(formData.get("team_size"));
+  const sport = String(formData.get("sport") ?? "");
 
   if (!name) {
     redirect("/admin/events/new?error=Tournament%20name%20is%20required");
+  }
+
+  if (!dateLabel) {
+    redirect("/admin/events/new?error=Choose%20a%20valid%20tournament%20date");
+  }
+
+  if (!teamSize) {
+    redirect("/admin/events/new?error=Team%20size%20must%20be%20between%202%20and%2020");
+  }
+  if (!["football", "basketball"].includes(sport)) {
+    redirect("/admin/events/new?error=Choose%20a%20tournament%20sport");
   }
 
   const { supabase, user } = await requireUser();
@@ -44,10 +93,12 @@ export async function createEvent(formData: FormData) {
       name,
       slug,
       description: description || null,
-      date_label: dateLabel || null,
+      date_label: dateLabel,
       location: location || null,
       visibility: "public",
       football_enabled: true,
+      team_size: teamSize,
+      sport: sport as "football" | "basketball",
     })
     .select("id")
     .single();
@@ -61,6 +112,112 @@ export async function createEvent(formData: FormData) {
   }
 
   redirect(`/admin/events/${event.id}`);
+}
+
+export async function updateEventDetails(formData: FormData) {
+  const eventId = String(formData.get("event_id") ?? "").trim();
+  const name = String(formData.get("name") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const eventDate = String(formData.get("event_date") ?? "").trim();
+  const dateLabel = formatEventDate(eventDate);
+  const location = String(formData.get("location") ?? "").trim();
+  const teamSize = parseTeamSize(formData.get("team_size"));
+
+  if (!eventId) {
+    redirect("/admin/events?error=Missing%20tournament");
+  }
+
+  if (!name) {
+    redirect(eventAdminSectionPath(eventId, "settings", { error: "Tournament name is required" }));
+  }
+
+  if (!dateLabel) {
+    redirect(eventAdminSectionPath(eventId, "settings", { error: "Choose a valid tournament date" }));
+  }
+
+  if (!location) {
+    redirect(eventAdminSectionPath(eventId, "settings", { error: "Location is required" }));
+  }
+
+
+  if (!teamSize) {
+    redirect(eventAdminSectionPath(eventId, "settings", { error: "Team size must be between 2 and 20" }));
+  }
+
+  const { supabase } = await requireUser();
+  const { data: event, error } = await supabase
+    .from("events")
+    .update({
+      name,
+      description: description || null,
+      date_label: dateLabel,
+      location,
+      team_size: teamSize,
+    })
+    .eq("id", eventId)
+    .select("slug,sport")
+    .single();
+
+  if (error || !event) {
+    redirect(
+      eventAdminSectionPath(eventId, "settings", {
+        error: error?.message ?? "Unable to update tournament",
+      }),
+    );
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin/events");
+  revalidatePath(`/admin/events/${eventId}`);
+  revalidatePath(`/events/${event.slug}`);
+  revalidatePath(`/events/${event.slug}/${event.sport}`);
+  redirect(eventAdminSectionPath(eventId, "settings", { message: "Tournament details saved" }));
+}
+
+export async function deleteEvent(formData: FormData) {
+  const eventId = String(formData.get("event_id") ?? "").trim();
+  const confirmation = String(formData.get("confirmation") ?? "").trim();
+
+  if (!eventId) {
+    redirect("/admin/events?error=Missing%20tournament");
+  }
+
+  const { supabase, user } = await requireUser();
+  const { data: event, error: eventError } = await supabase
+    .from("events")
+    .select("name,owner_id")
+    .eq("id", eventId)
+    .single();
+
+  if (eventError || !event) {
+    redirect(eventAdminSectionPath(eventId, "settings", { error: "Tournament not found" }));
+  }
+
+  if (event.owner_id !== user.id) {
+    redirect(
+      eventAdminSectionPath(eventId, "settings", {
+        error: "Only the tournament owner can delete it",
+      }),
+    );
+  }
+
+  if (confirmation !== event.name) {
+    redirect(
+      eventAdminSectionPath(eventId, "settings", {
+        error: `Type ${event.name} to confirm deletion`,
+      }),
+    );
+  }
+
+  const { error } = await supabase.from("events").delete().eq("id", eventId);
+
+  if (error) {
+    redirect(eventAdminSectionPath(eventId, "settings", { error: error.message }));
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin/events");
+  redirect("/admin/events?message=Tournament%20deleted");
 }
 
 export async function updateViewerAccessCode(formData: FormData) {
@@ -81,11 +238,11 @@ export async function updateViewerAccessCode(formData: FormData) {
 
     if (error) {
       redirect(
-        `/admin/events/${eventId}?error=${encodeURIComponent(error.message)}`,
+        `/admin/events/${eventId}/access?error=${encodeURIComponent(error.message)}`,
       );
     }
 
-    redirect(`/admin/events/${eventId}?message=Access%20code%20cleared`);
+    redirect(`/admin/events/${eventId}/access?message=Access%20code%20cleared`);
   }
 
   const { error } = await supabase.from("event_viewer_access_codes").upsert({
@@ -95,11 +252,11 @@ export async function updateViewerAccessCode(formData: FormData) {
 
   if (error) {
     redirect(
-      `/admin/events/${eventId}?error=${encodeURIComponent(error.message)}`,
+      `/admin/events/${eventId}/access?error=${encodeURIComponent(error.message)}`,
     );
   }
 
-  redirect(`/admin/events/${eventId}?message=Access%20code%20saved`);
+  redirect(`/admin/events/${eventId}/access?message=Access%20code%20saved`);
 }
 
 export async function grantEventAdmin(formData: FormData) {
@@ -124,12 +281,12 @@ export async function grantEventAdmin(formData: FormData) {
   );
 
   if (error) {
-    redirect(eventAdminPath(eventId, { error: error.message }));
+    redirect(eventAdminSectionPath(eventId, "access", { error: error.message }));
   }
 
   revalidatePath("/admin/events");
   revalidatePath(`/admin/events/${eventId}`);
-  redirect(eventAdminPath(eventId, { message: "Admin access granted" }));
+  redirect(eventAdminSectionPath(eventId, "access", { message: "Admin access granted" }));
 }
 
 export async function revokeEventAdmin(formData: FormData) {
@@ -149,10 +306,10 @@ export async function revokeEventAdmin(formData: FormData) {
     .eq("role", "admin");
 
   if (error) {
-    redirect(eventAdminPath(eventId, { error: error.message }));
+    redirect(eventAdminSectionPath(eventId, "access", { error: error.message }));
   }
 
   revalidatePath("/admin/events");
   revalidatePath(`/admin/events/${eventId}`);
-  redirect(eventAdminPath(eventId, { message: "Admin access removed" }));
+  redirect(eventAdminSectionPath(eventId, "access", { message: "Admin access removed" }));
 }

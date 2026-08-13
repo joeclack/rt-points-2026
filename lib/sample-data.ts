@@ -14,6 +14,8 @@ export type EventSummary = {
   dateLabel: string;
   location: string;
   visibility: "public" | "private";
+  teamSize: number;
+  sport: "football" | "basketball";
   teams: Team[];
   viewerAccessCode?: string | null;
   adminRole?: "owner" | "admin";
@@ -56,6 +58,8 @@ export const sampleEvents: EventSummary[] = [
     dateLabel: "Summer 2026",
     location: "Main auditorium",
     visibility: "public",
+    teamSize: 5,
+    sport: "football",
     teams: sampleTeams,
   },
   {
@@ -67,6 +71,8 @@ export const sampleEvents: EventSummary[] = [
     dateLabel: "Demo event",
     location: "Main pitch",
     visibility: "public",
+    teamSize: 5,
+    sport: "football",
     teams: sampleTeams.slice(0, 3),
   },
 ];

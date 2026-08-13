@@ -6,9 +6,9 @@ import { redirect } from "next/navigation";
 import { isSupabaseConfigured, requireAdminUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
-function footballAdminPath(eventId: string, params: Record<string, string>) {
+function teamsAdminPath(eventId: string, params: Record<string, string>) {
   const searchParams = new URLSearchParams(params);
-  return `/admin/events/${eventId}/football?${searchParams.toString()}#requests`;
+  return `/admin/events/${eventId}/teams?${searchParams.toString()}#requests`;
 }
 
 async function reviewRequest(formData: FormData, decision: "accepted" | "rejected") {
@@ -23,7 +23,7 @@ async function reviewRequest(formData: FormData, decision: "accepted" | "rejecte
 
   if (!isSupabaseConfigured()) {
     redirect(
-      footballAdminPath(eventId, {
+      teamsAdminPath(eventId, {
         message:
           decision === "accepted"
             ? "Team accepted and added"
@@ -40,23 +40,27 @@ async function reviewRequest(formData: FormData, decision: "accepted" | "rejecte
   });
 
   if (error) {
-    redirect(footballAdminPath(eventId, { error: error.message }));
+    redirect(teamsAdminPath(eventId, { error: error.message }));
   }
 
   const { data: event } = await supabase
     .from("events")
-    .select("slug")
+    .select("slug,sport")
     .eq("id", eventId)
     .single();
 
-  revalidatePath(`/admin/events/${eventId}/football`);
+  revalidatePath(`/admin/events/${eventId}`);
+  revalidatePath(`/admin/events/${eventId}/teams`);
+  if (event) {
+    revalidatePath(`/admin/events/${eventId}/${event.sport}`);
+  }
   if (event?.slug) {
     revalidatePath(`/events/${event.slug}`);
-    revalidatePath(`/events/${event.slug}/football`);
+    revalidatePath(`/events/${event.slug}/${event.sport}`);
   }
 
   redirect(
-    footballAdminPath(eventId, {
+    teamsAdminPath(eventId, {
       message:
         decision === "accepted"
           ? "Team accepted and added"

@@ -4,8 +4,8 @@ import {
   acceptTeamJoinRequest,
   rejectTeamJoinRequest,
 } from "@/app/admin/events/[eventId]/join-requests/actions";
+import { PendingSubmitButton } from "@/components/pending-submit-button";
 import { StatusPill } from "@/components/status-pill";
-import { Button } from "@/components/ui/button";
 import type { TeamJoinRequest } from "@/lib/team-join-requests";
 
 export function AdminTeamJoinRequests({
@@ -84,18 +84,27 @@ export function AdminTeamJoinRequests({
                   <form action={acceptTeamJoinRequest}>
                     <input name="event_id" type="hidden" value={eventId} />
                     <input name="request_id" type="hidden" value={request.id} />
-                    <Button className="w-full" type="submit">
+                    <PendingSubmitButton
+                      className="w-full"
+                      pendingLabel="Accepting..."
+                      type="submit"
+                    >
                       <Check className="h-4 w-4" />
                       Accept
-                    </Button>
+                    </PendingSubmitButton>
                   </form>
                   <form action={rejectTeamJoinRequest}>
                     <input name="event_id" type="hidden" value={eventId} />
                     <input name="request_id" type="hidden" value={request.id} />
-                    <Button className="w-full" type="submit" variant="outline">
+                    <PendingSubmitButton
+                      className="w-full"
+                      pendingLabel="Rejecting..."
+                      type="submit"
+                      variant="outline"
+                    >
                       <X className="h-4 w-4" />
                       Reject
-                    </Button>
+                    </PendingSubmitButton>
                   </form>
                 </div>
               </div>

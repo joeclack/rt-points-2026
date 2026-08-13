@@ -9,18 +9,29 @@ import { getViewerAccessCode } from "@/lib/viewer-access";
 
 function tournamentPath(slug: string, params: Record<string, string>) {
   const searchParams = new URLSearchParams(params);
-  return `/events/${slug}?${searchParams.toString()}#join`;
+  return `/events/${slug}/join?${searchParams.toString()}`;
 }
 
 function fail(slug: string, message: string): never {
   redirect(tournamentPath(slug, { join_error: message }));
 }
 
+function submittedPath(slug: string) {
+  return `/events/${slug}/join/submitted`;
+}
+
 export async function submitTeamJoinRequest(formData: FormData) {
   const eventSlug = String(formData.get("event_slug") ?? "").trim();
   const teamName = String(formData.get("team_name") ?? "").trim();
   const teamColour = String(formData.get("team_colour") ?? "").trim();
-  const playerNames = Array.from({ length: 5 }, (_, index) =>
+  const requestedTeamSize = Number(formData.get("team_size"));
+  const teamSize =
+    Number.isInteger(requestedTeamSize) &&
+    requestedTeamSize >= 2 &&
+    requestedTeamSize <= 20
+      ? requestedTeamSize
+      : 5;
+  const playerNames = Array.from({ length: teamSize }, (_, index) =>
     String(formData.get(`player_${index + 1}`) ?? "").trim(),
   );
 
@@ -37,11 +48,13 @@ export async function submitTeamJoinRequest(formData: FormData) {
   }
 
   if (playerNames.some((name) => name.length < 2 || name.length > 80)) {
-    fail(eventSlug, "Enter all five player names");
+    fail(eventSlug, `Enter all ${teamSize} player names`);
   }
 
-  if (new Set(playerNames.map((name) => name.toLowerCase())).size !== 5) {
-    fail(eventSlug, "Enter five different player names");
+  if (
+    new Set(playerNames.map((name) => name.toLowerCase())).size !== teamSize
+  ) {
+    fail(eventSlug, `Enter ${teamSize} different player names`);
   }
 
   if (containsProfanity(teamName)) {
@@ -53,11 +66,7 @@ export async function submitTeamJoinRequest(formData: FormData) {
   }
 
   if (!isSupabaseConfigured()) {
-    redirect(
-      tournamentPath(eventSlug, {
-        join_message: "Team request submitted for admin approval",
-      }),
-    );
+    redirect(submittedPath(eventSlug));
   }
 
   const accessCode = await getViewerAccessCode(eventSlug);
@@ -74,9 +83,5 @@ export async function submitTeamJoinRequest(formData: FormData) {
     fail(eventSlug, error.message);
   }
 
-  redirect(
-    tournamentPath(eventSlug, {
-      join_message: "Team request submitted for admin approval",
-    }),
-  );
+  redirect(submittedPath(eventSlug));
 }

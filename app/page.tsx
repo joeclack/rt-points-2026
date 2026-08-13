@@ -1,86 +1,59 @@
-import { CalendarDays, Search } from "lucide-react";
+import { CalendarDays, ChevronRight, MapPin } from "lucide-react";
 import Link from "next/link";
 
-import { StatusPill } from "@/components/status-pill";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { searchPublicEvents } from "@/lib/events";
 
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ q?: string }>;
-}) {
-  const { q = "" } = await searchParams;
-  const events = await searchPublicEvents(q);
+export default async function HomePage() {
+  const events = await searchPublicEvents();
 
   return (
-    <main className="min-h-screen">
-      <section className="mx-auto w-full max-w-5xl px-6 py-8">
-        <header className="mb-8 flex items-center justify-between gap-4 border-b border-slate-200 pb-6">
-          <h1 className="text-3xl font-bold tracking-normal text-slate-950">
-            Find tournament
+    <main className="min-h-screen bg-slate-50">
+      <section className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
+        <header className="mb-6 border-b border-slate-200 pb-5">
+          <h1 className="text-2xl font-semibold text-slate-950 sm:text-3xl">
+            Tournaments
           </h1>
-          <Button asChild size="sm" variant="outline">
-            <Link href="/login">Log in</Link>
-          </Button>
         </header>
 
-        <form className="mb-6 flex gap-2">
-          <Input
-            aria-label="Tournament name"
-            defaultValue={q}
-            name="q"
-            placeholder="Tournament name"
-            type="search"
-          />
-          <Button type="submit">
-            <Search className="h-4 w-4" />
-            Search
-          </Button>
-        </form>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Public tournaments</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {events.length > 0 ? (
-              <div className="space-y-3">
-                {events.map((event) => (
+        {events.length > 0 ? (
+          <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+            <div className="divide-y divide-slate-100">
+              {events.map((event) => (
                 <Link
-                  key={event.id}
+                  className="flex items-center gap-4 px-4 py-4 transition-colors hover:bg-slate-50 sm:px-5"
                   href={`/events/${event.slug}`}
-                  className="flex flex-col gap-3 rounded-md border border-border p-4 transition-colors hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between"
+                  key={event.id}
                 >
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="text-lg font-semibold text-slate-950">
-                        {event.name}
-                      </h2>
-                      <StatusPill tone="live">{event.visibility}</StatusPill>
-                    </div>
-                    <p className="mt-2 flex items-center gap-2 text-sm text-slate-500">
-                      <CalendarDays className="h-4 w-4" />
-                      {event.dateLabel} · {event.location}
+                  <div className="min-w-0 flex-1">
+                    <h2 className="truncate text-base font-semibold text-slate-950 sm:text-lg">
+                      {event.name}
+                    </h2>
+                    <p className="mt-1 text-xs font-medium capitalize text-slate-500">
+                      {event.sport}
                     </p>
+                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
+                      <span className="flex items-center gap-1.5">
+                        <CalendarDays className="h-4 w-4" />
+                        {event.dateLabel}
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <MapPin className="h-4 w-4" />
+                        {event.location}
+                      </span>
+                    </div>
                   </div>
+                  <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" />
                 </Link>
-                ))}
-              </div>
-            ) : (
-              <p className="py-8 text-center text-sm text-slate-500">
-                No public tournaments match your search.
-              </p>
-            )}
-          </CardContent>
-        </Card>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-slate-200 bg-white px-5 py-12 text-center">
+            <p className="font-medium text-slate-800">
+              No public tournaments are available yet.
+            </p>
+          </div>
+        )}
       </section>
     </main>
   );

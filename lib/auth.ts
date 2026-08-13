@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cache } from "react";
 
 import { createClient } from "@/lib/supabase/server";
 
@@ -14,19 +15,17 @@ export function isSupabaseConfigured() {
   );
 }
 
-export async function requireAdminUser() {
+export const requireAdminUser = cache(async function requireAdminUser() {
   if (!isSupabaseConfigured()) {
     return null;
   }
 
   const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const { data, error } = await supabase.auth.getClaims();
 
-  if (!session?.user) {
+  if (error || !data?.claims.sub) {
     redirect("/login");
   }
 
-  return session.user;
-}
+  return { id: data.claims.sub };
+});

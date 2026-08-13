@@ -16,6 +16,7 @@ import {
   updateFootballMatchSchedule,
 } from "@/app/admin/events/[eventId]/football/actions";
 import { KickoffInput } from "@/components/kickoff-input";
+import { PendingSubmitButton } from "@/components/pending-submit-button";
 import { StatusPill } from "@/components/status-pill";
 import { TeamBadge } from "@/components/team-badge";
 import { Button } from "@/components/ui/button";
@@ -195,22 +196,28 @@ export function AdminFootballMatchCard({
                   placeholder="Main pitch"
                 />
               </div>
-              <Button className="self-end" type="submit" variant="outline">
+              <PendingSubmitButton
+                className="self-end"
+                pendingLabel="Saving..."
+                type="submit"
+                variant="outline"
+              >
                 <Save className="h-4 w-4" />
                 Save
-              </Button>
+              </PendingSubmitButton>
             </form>
             <form action={updateFootballMatchLifecycle}>
               <HiddenMatchFields eventId={eventId} match={match} />
               <input name="command" type="hidden" value="start" />
-              <Button
+              <PendingSubmitButton
                 className="w-full"
                 disabled={!homeTeam || !awayTeam}
+                pendingLabel="Starting..."
                 type="submit"
               >
                 <Play className="h-4 w-4" />
                 Start live match
-              </Button>
+              </PendingSubmitButton>
             </form>
           </div>
         ) : null}
@@ -224,22 +231,31 @@ export function AdminFootballMatchCard({
                 type="hidden"
                 value={match.status === "halftime" ? "resume" : "halftime"}
               />
-              <Button className="w-full" type="submit" variant="outline">
+              <PendingSubmitButton
+                className="w-full"
+                pendingLabel="Updating..."
+                type="submit"
+                variant="outline"
+              >
                 {match.status === "halftime" ? (
                   <Play className="h-4 w-4" />
                 ) : (
                   <Pause className="h-4 w-4" />
                 )}
                 {match.status === "halftime" ? "Start second half" : "Half-time"}
-              </Button>
+              </PendingSubmitButton>
             </form>
             <form action={updateFootballMatchLifecycle}>
               <HiddenMatchFields eventId={eventId} match={match} />
               <input name="command" type="hidden" value="finish" />
-              <Button className="w-full" type="submit">
+              <PendingSubmitButton
+                className="w-full"
+                pendingLabel="Publishing..."
+                type="submit"
+              >
                 <Flag className="h-4 w-4" />
                 Publish full-time
-              </Button>
+              </PendingSubmitButton>
             </form>
           </div>
         ) : null}
@@ -248,10 +264,15 @@ export function AdminFootballMatchCard({
           <form action={updateFootballMatchLifecycle} className="mt-6">
             <HiddenMatchFields eventId={eventId} match={match} />
             <input name="command" type="hidden" value="reopen" />
-            <Button className="w-full" type="submit" variant="outline">
+            <PendingSubmitButton
+              className="w-full"
+              pendingLabel="Reopening..."
+              type="submit"
+              variant="outline"
+            >
               <RotateCcw className="h-4 w-4" />
               Reopen to correct result
-            </Button>
+            </PendingSubmitButton>
           </form>
         ) : null}
 

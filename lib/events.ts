@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { cache } from "react";
 
 import type { EventSummary, Team } from "@/lib/sample-data";
 import { isSupabaseConfigured } from "@/lib/auth";
@@ -14,6 +15,8 @@ type EventRow = {
   location: string | null;
   visibility: "public" | "private";
   football_enabled: boolean;
+  team_size: number;
+  sport: "football" | "basketball";
 };
 
 type TeamRow = {
@@ -37,6 +40,19 @@ type PublicEventPayload = EventRow & {
 type AdminEventMembershipRow = {
   role: "owner" | "admin";
   events: EventRow | null;
+};
+
+type AdminEventDetailMembershipRow = {
+  role: "owner" | "admin";
+  events:
+    | (EventRow & {
+        teams: TeamRow[];
+        event_viewer_access_codes:
+          | { access_code: string }
+          | Array<{ access_code: string }>
+          | null;
+      })
+    | null;
 };
 
 export type EventAdminMember = {
@@ -63,6 +79,8 @@ function mapEvent(
     dateLabel: row.date_label ?? "Date to be confirmed",
     location: row.location ?? "Location to be confirmed",
     visibility: row.visibility,
+    teamSize: row.team_size,
+    sport: row.sport,
     teams,
     adminRole,
   };
@@ -109,9 +127,8 @@ export async function searchPublicEvents(query = "") {
   let eventQuery = supabase
     .from("events")
     .select(
-      "id,name,slug,description,date_label,location,visibility,football_enabled",
+      "id,name,slug,description,date_label,location,visibility,football_enabled,team_size,sport",
     )
-    .eq("football_enabled", true)
     .eq("visibility", "public");
 
   if (normalizedQuery) {
@@ -145,7 +162,7 @@ export async function getPublicEventBySlug(slug: string, accessCode = "") {
   );
 
   if (error || !event) {
-    return getEventBySlug(slug);
+    return null;
   }
 
   return mapPublicEventPayload(event as PublicEventPayload);
@@ -165,6 +182,8 @@ export async function getPublicEventShellBySlug(slug: string) {
         location: event.location,
         visibility: event.visibility,
         football_enabled: true,
+        team_size: event.teamSize,
+        sport: event.sport,
       },
       [],
     );
@@ -174,15 +193,14 @@ export async function getPublicEventShellBySlug(slug: string) {
   const { data: event, error } = await supabase
     .from("events")
     .select(
-      "id,name,slug,description,date_label,location,visibility,football_enabled",
+      "id,name,slug,description,date_label,location,visibility,football_enabled,team_size,sport",
     )
     .eq("slug", slug)
-    .eq("football_enabled", true)
     .eq("visibility", "public")
     .single();
 
   if (error || !event) {
-    return getEventBySlug(slug);
+    notFound();
   }
 
   return mapEvent(event);
@@ -238,7 +256,7 @@ export async function getAdminEvents(userId?: string) {
   const { data, error } = await supabase
     .from("event_admins")
     .select(
-      "role,events!inner(id,name,slug,description,date_label,location,visibility,football_enabled)",
+      "role,events!inner(id,name,slug,description,date_label,location,visibility,football_enabled,team_size,sport)",
     )
     .eq("user_id", adminUserId)
     .order("created_at", { ascending: false });
@@ -255,10 +273,9 @@ export async function getAdminEvents(userId?: string) {
   );
 }
 
-export async function getAdminEventById(
+const getAdminEventByIdCached = cache(async function getAdminEventByIdCached(
   id: string,
   userId?: string,
-  options: { includeTeams?: boolean } = {},
 ) {
   if (!isSupabaseConfigured()) {
     return getEventById(id);
@@ -279,61 +296,43 @@ export async function getAdminEventById(
     notFound();
   }
 
-  const { data: membership, error: membershipError } = await supabase
+  const { data: membership, error } = await supabase
     .from("event_admins")
-    .select("role")
+    .select(
+      "role,events!inner(id,name,slug,description,date_label,location,visibility,football_enabled,team_size,sport,teams(id,name,colour,badge_text,badge_url),event_viewer_access_codes(access_code))",
+    )
     .eq("event_id", id)
     .eq("user_id", adminUserId)
     .single();
 
-  if (membershipError || !membership) {
+  if (error || !membership) {
     notFound();
   }
 
-  const eventQuery = supabase
-    .from("events")
-    .select(
-      "id,name,slug,description,date_label,location,visibility,football_enabled",
-    )
-    .eq("id", id)
-    .single();
+  const detail = membership as unknown as AdminEventDetailMembershipRow;
+  const event = detail.events;
 
-  const teamsQuery = options.includeTeams
-    ? supabase
-        .from("teams")
-        .select("id,name,colour,badge_text,badge_url")
-        .eq("event_id", id)
-        .order("created_at")
-    : Promise.resolve({ data: null });
-
-  const accessCodeQuery = supabase
-    .from("event_viewer_access_codes")
-    .select("access_code")
-    .eq("event_id", id)
-    .maybeSingle();
-
-  const [
-    { data: event, error },
-    { data: teams },
-    { data: accessCode },
-  ] = await Promise.all([
-    eventQuery,
-    teamsQuery,
-    accessCodeQuery,
-  ]);
-
-  if (error || !event) {
+  if (!event) {
     notFound();
   }
+
+  const accessCodeRows = event.event_viewer_access_codes;
+  const accessCode = Array.isArray(accessCodeRows)
+    ? accessCodeRows[0]
+    : accessCodeRows;
 
   return {
     ...mapEvent(
       event,
-      (teams ?? []).map((team) => mapTeam(team)),
-      membership.role,
+      event.teams.map((team) => mapTeam(team)),
+      detail.role,
     ),
     viewerAccessCode: accessCode?.access_code ?? null,
   };
+});
+
+export function getAdminEventById(id: string, userId?: string) {
+  return getAdminEventByIdCached(id, userId);
 }
 
 export async function getEventAdminMembers(eventId: string) {

@@ -4,6 +4,8 @@ import {
   ArrowLeft,
   CalendarClock,
   CheckCircle2,
+  ChevronDown,
+  ChevronRight,
   MapPin,
   Radio,
   Trophy,
@@ -25,6 +27,8 @@ import {
 import type { Team } from "@/lib/sample-data";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+
+const INITIAL_VISIBLE_MATCHES = 4;
 
 type FootballLiveCentreProps = {
   accessCode: string;
@@ -111,11 +115,10 @@ function mapPublicFootball(payload: PublicFootballPayload) {
 
 function formatKickoff(iso: string | null) {
   if (!iso) {
-    return "Kickoff TBC";
+    return "TBC";
   }
 
   return new Intl.DateTimeFormat(undefined, {
-    weekday: "short",
     day: "numeric",
     month: "short",
     hour: "2-digit",
@@ -123,30 +126,33 @@ function formatKickoff(iso: string | null) {
   }).format(new Date(iso));
 }
 
-function PublicTeam({ team }: { team?: Team }) {
+function isAllocatedMatch(match: FootballMatch, teams: Team[]) {
+  return Boolean(
+    match.homeTeamId &&
+      match.awayTeamId &&
+      teams.some((team) => team.id === match.homeTeamId) &&
+      teams.some((team) => team.id === match.awayTeamId),
+  );
+}
+
+function PublicTeam({ team }: { team: Team }) {
   return (
     <div className="flex min-w-0 flex-col items-center px-1">
-      {team ? (
-        <TeamBadge
-          badge={team.badge}
-          badgeUrl={team.badgeUrl}
-          className="h-16 w-16 text-2xl shadow-xl ring-4 ring-white/10 sm:h-20 sm:w-20"
-          colour={team.colour}
-          name={team.name}
-        />
-      ) : (
-        <span className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10 text-xs font-bold text-slate-400 sm:h-20 sm:w-20">
-          TBD
-        </span>
-      )}
-      <p className="mt-3 max-w-full truncate text-center text-lg font-bold text-white sm:text-2xl">
-        {team?.name ?? "Winner TBD"}
+      <TeamBadge
+        badge={team.badge}
+        badgeUrl={team.badgeUrl}
+        className="h-14 w-14 text-lg sm:h-16 sm:w-16"
+        colour={team.colour}
+        name={team.name}
+      />
+      <p className="mt-3 max-w-full truncate text-center text-sm font-semibold text-slate-900 sm:text-base">
+        {team.name}
       </p>
     </div>
   );
 }
 
-function LiveMatchHero({
+function LiveMatch({
   highlighted,
   match,
   teams,
@@ -158,104 +164,135 @@ function LiveMatchHero({
   const homeTeam = teams.find((team) => team.id === match.homeTeamId);
   const awayTeam = teams.find((team) => team.id === match.awayTeamId);
 
+  if (!homeTeam || !awayTeam) {
+    return null;
+  }
+
   return (
     <article
       className={cn(
-        "football-pitch relative overflow-hidden rounded-3xl border border-white/10 bg-emerald-950 px-4 py-6 shadow-2xl shadow-cyan-950/30 transition sm:px-8 sm:py-10",
-        highlighted && "ring-4 ring-cyan-300/50",
+        "overflow-hidden rounded-lg border border-slate-200 bg-white transition-colors",
+        highlighted && "bg-emerald-50",
       )}
     >
-      <div className="relative z-10 min-h-[15rem] sm:min-h-[18rem]">
-        <span className="absolute right-0 top-0 text-xs font-bold uppercase tracking-wider text-emerald-100/80">
+      <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-2.5">
+        <span className="text-xs font-medium text-slate-500">
           {footballStageLabels[match.stage]}
         </span>
+        <span className="flex items-center gap-1.5 text-xs font-semibold text-red-600">
+          <span className="h-1.5 w-1.5 rounded-full bg-red-600" />
+          {match.status === "halftime" ? "HALF-TIME" : "LIVE"}
+        </span>
+      </div>
 
-        <div className="absolute inset-x-0 top-1/2 grid -translate-y-1/2 grid-cols-2">
-          <PublicTeam team={homeTeam} />
-          <PublicTeam team={awayTeam} />
-        </div>
-
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-4 py-7 sm:gap-8 sm:px-10 sm:py-9">
+        <PublicTeam team={homeTeam} />
         <div
           aria-label={`${match.homeScore} to ${match.awayScore}`}
-          className="absolute left-1/2 top-1/2 z-20 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 sm:gap-2"
+          className="flex items-center gap-2 text-4xl font-bold text-slate-950 sm:text-5xl"
         >
-            <span className="text-5xl font-black tracking-tighter text-white sm:text-7xl">
-              {match.homeScore}
-            </span>
-            <span className="text-lg font-black text-emerald-200/70 sm:text-2xl">
-              –
-            </span>
-            <span className="text-5xl font-black tracking-tighter text-white sm:text-7xl">
-              {match.awayScore}
-            </span>
+          <span>{match.homeScore}</span>
+          <span className="text-2xl font-normal text-slate-300">-</span>
+          <span>{match.awayScore}</span>
         </div>
-
-        {match.venue ? (
-          <p className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 text-xs font-medium text-emerald-100/70">
-            <MapPin className="h-3.5 w-3.5" />
-            {match.venue}
-          </p>
-        ) : null}
+        <PublicTeam team={awayTeam} />
       </div>
-    </article>
-  );
-}
 
-function FixtureCard({
-  match,
-  teams,
-}: {
-  match: FootballMatch;
-  teams: Team[];
-}) {
-  const homeTeam = teams.find((team) => team.id === match.homeTeamId);
-  const awayTeam = teams.find((team) => team.id === match.awayTeamId);
-  const isResult = match.status === "full_time";
-
-  return (
-    <article className="rounded-xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur">
-      <div className="mb-4 flex items-center justify-between gap-2 text-[0.65rem] font-bold uppercase tracking-wider">
-        <span className="text-cyan-200">
-          {footballStageLabels[match.stage]}
-          {match.stage === "league" ? ` · R${match.roundNumber}` : ""}
-        </span>
-        <span className="text-slate-400">
-          {isResult ? "Full-time" : formatKickoff(match.kickoffAt)}
-        </span>
-      </div>
-      <div className="space-y-2">
-        {[
-          { team: homeTeam, score: match.homeScore },
-          { team: awayTeam, score: match.awayScore },
-        ].map(({ team, score }, index) => (
-          <div className="flex items-center gap-3" key={`${match.id}-${index}`}>
-            {team ? (
-              <TeamBadge
-                badge={team.badge}
-                badgeUrl={team.badgeUrl}
-                className="h-8 w-8 shrink-0 text-xs"
-                colour={team.colour}
-                name={team.name}
-              />
-            ) : (
-              <span className="h-8 w-8 rounded-md bg-white/10" />
-            )}
-            <span className="min-w-0 flex-1 truncate font-semibold text-white">
-              {team?.name ?? "Winner TBD"}
-            </span>
-            <span className="text-xl font-black text-white">
-              {isResult ? score : "–"}
-            </span>
-          </div>
-        ))}
-      </div>
       {match.venue ? (
-        <p className="mt-3 flex items-center gap-1 text-xs text-slate-400">
-          <MapPin className="h-3 w-3" />
+        <p className="flex items-center justify-center gap-1.5 border-t border-slate-100 px-4 py-2.5 text-xs text-slate-500">
+          <MapPin className="h-3.5 w-3.5" />
           {match.venue}
         </p>
       ) : null}
     </article>
+  );
+}
+
+function MatchRow({ match, teams }: { match: FootballMatch; teams: Team[] }) {
+  const homeTeam = teams.find((team) => team.id === match.homeTeamId);
+  const awayTeam = teams.find((team) => team.id === match.awayTeamId);
+  const isResult = match.status === "full_time";
+
+  if (!homeTeam || !awayTeam) {
+    return null;
+  }
+
+  return (
+    <article className="grid grid-cols-[5.5rem_minmax(0,1fr)_1.5rem] items-center gap-3 px-4 py-3 sm:grid-cols-[8rem_minmax(0,1fr)_2rem]">
+      <div className="text-xs text-slate-500">
+        <p className="font-medium text-slate-700">
+          {isResult ? "FT" : formatKickoff(match.kickoffAt)}
+        </p>
+        <p className="mt-1 hidden sm:block">
+          {footballStageLabels[match.stage]}
+          {match.stage === "league" ? ` / R${match.roundNumber}` : ""}
+        </p>
+      </div>
+
+      <div className="min-w-0 space-y-2">
+        {[
+          { team: homeTeam, score: match.homeScore },
+          { team: awayTeam, score: match.awayScore },
+        ].map(({ team, score }, index) => (
+          <div className="flex items-center gap-2" key={`${match.id}-${index}`}>
+            <TeamBadge
+              badge={team.badge}
+              badgeUrl={team.badgeUrl}
+              className="h-6 w-6 shrink-0 text-[0.6rem]"
+              colour={team.colour}
+              name={team.name}
+            />
+            <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900">
+              {team.name}
+            </span>
+            {isResult ? (
+              <span className="font-semibold text-slate-950">{score}</span>
+            ) : null}
+          </div>
+        ))}
+      </div>
+
+      <span className="flex justify-center text-slate-300">
+        {isResult ? null : <ChevronRight className="h-4 w-4" />}
+      </span>
+    </article>
+  );
+}
+
+function MatchList({
+  expanded,
+  matches,
+  onExpand,
+  teams,
+}: {
+  expanded: boolean;
+  matches: FootballMatch[];
+  onExpand: () => void;
+  teams: Team[];
+}) {
+  const visibleMatches = expanded
+    ? matches
+    : matches.slice(0, INITIAL_VISIBLE_MATCHES);
+  const hiddenCount = matches.length - visibleMatches.length;
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <div className="divide-y divide-slate-100">
+        {visibleMatches.map((match) => (
+          <MatchRow key={match.id} match={match} teams={teams} />
+        ))}
+      </div>
+      {hiddenCount > 0 ? (
+        <button
+          className="flex w-full items-center justify-center gap-2 border-t border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+          onClick={onExpand}
+          type="button"
+        >
+          Show {hiddenCount} more
+          <ChevronDown className="h-4 w-4" />
+        </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -271,6 +308,8 @@ export function FootballLiveCentre({
   const [selectedTournamentId, setSelectedTournamentId] = useState(
     initialTournaments[0]?.id ?? "",
   );
+  const [showAllFixtures, setShowAllFixtures] = useState(false);
+  const [showAllResults, setShowAllResults] = useState(false);
   const isSampleData = eventId.startsWith("evt_");
   const [connectionState, setConnectionState] = useState<
     "connecting" | "live" | "offline" | "demo"
@@ -282,17 +321,25 @@ export function FootballLiveCentre({
   const tournament =
     tournaments.find((item) => item.id === selectedTournamentId) ??
     tournaments[0];
-  const liveMatches = useMemo(
+  const liveMatch = useMemo(
     () =>
       tournament?.matches
-        .filter((match) => isLiveFootballMatch(match.status))
-        .sort((a, b) => a.position - b.position) ?? [],
-    [tournament],
+        .filter(
+          (match) =>
+            isLiveFootballMatch(match.status) &&
+            isAllocatedMatch(match, initialTeams),
+        )
+        .sort((a, b) => a.position - b.position)[0],
+    [initialTeams, tournament],
   );
   const upcomingMatches = useMemo(
     () =>
       tournament?.matches
-        .filter((match) => match.status === "scheduled")
+        .filter(
+          (match) =>
+            match.status === "scheduled" &&
+            isAllocatedMatch(match, initialTeams),
+        )
         .sort(
           (a, b) =>
             (a.kickoffAt ? new Date(a.kickoffAt).getTime() : Infinity) -
@@ -300,18 +347,22 @@ export function FootballLiveCentre({
             a.roundNumber - b.roundNumber ||
             a.position - b.position,
         ) ?? [],
-    [tournament],
+    [initialTeams, tournament],
   );
   const results = useMemo(
     () =>
       tournament?.matches
-        .filter((match) => match.status === "full_time")
+        .filter(
+          (match) =>
+            match.status === "full_time" &&
+            isAllocatedMatch(match, initialTeams),
+        )
         .sort(
           (a, b) =>
             new Date(b.endedAt ?? 0).getTime() -
             new Date(a.endedAt ?? 0).getTime(),
         ) ?? [],
-    [tournament],
+    [initialTeams, tournament],
   );
 
   useEffect(() => {
@@ -424,66 +475,72 @@ export function FootballLiveCentre({
     }
   }, [accessCode, eventId, eventSlug, isSampleData]);
 
+  function selectTournament(tournamentId: string) {
+    setSelectedTournamentId(tournamentId);
+    setShowAllFixtures(false);
+    setShowAllResults(false);
+  }
+
   return (
-    <main className="football-display min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto w-full max-w-6xl px-4 pb-16 pt-5 sm:px-6 sm:pt-8">
-        <header className="mb-6 flex items-center justify-between gap-3">
+    <main className="min-h-screen bg-slate-100 text-slate-950">
+      <header className="border-b border-slate-200 bg-white">
+        <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <Link
               aria-label="Back to tournament"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-slate-300 transition hover:bg-white/10 hover:text-white"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-200 text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-950"
               href={`/events/${eventSlug}`}
             >
               <ArrowLeft className="h-4 w-4" />
             </Link>
             <div className="min-w-0">
-              <p className="truncate text-xs font-bold uppercase tracking-[0.16em] text-cyan-300">
+              <p className="truncate text-xs font-medium text-slate-500">
                 {eventName}
               </p>
-              <h1 className="truncate text-xl font-black sm:text-2xl">
-                Football match centre
+              <h1 className="truncate text-lg font-semibold text-slate-950 sm:text-xl">
+                Match centre
               </h1>
             </div>
           </div>
           <span
             className={cn(
-              "flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wider",
+              "flex shrink-0 items-center gap-1.5 text-xs font-medium",
               connectionState === "live"
-                ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-300"
-                : connectionState === "demo"
-                  ? "border-cyan-400/20 bg-cyan-400/10 text-cyan-300"
+                ? "text-emerald-700"
                 : connectionState === "offline"
-                  ? "border-amber-400/20 bg-amber-400/10 text-amber-300"
-                  : "border-white/10 bg-white/5 text-slate-400",
+                  ? "text-amber-700"
+                  : "text-slate-500",
             )}
           >
             {connectionState === "offline" ? (
-              <WifiOff className="h-3 w-3" />
+              <WifiOff className="h-3.5 w-3.5" />
             ) : (
-              <Wifi className="h-3 w-3" />
+              <Wifi className="h-3.5 w-3.5" />
             )}
             {connectionState === "live"
-              ? "Live"
+              ? "Live updates"
               : connectionState === "demo"
-                ? "Demo"
-              : connectionState === "offline"
-                ? "Refreshing"
-                : "Connecting"}
+                ? "Demo data"
+                : connectionState === "offline"
+                  ? "Refreshing"
+                  : "Connecting"}
           </span>
-        </header>
+        </div>
+      </header>
 
+      <div className="mx-auto w-full max-w-4xl px-4 pb-16 pt-5 sm:px-6 sm:pt-7">
         {tournaments.length > 1 ? (
-          <div className="mb-6 flex gap-2 overflow-x-auto pb-1">
+          <div className="mb-5 flex gap-2 overflow-x-auto pb-1">
             {tournaments.map((item) => (
               <button
                 className={cn(
-                  "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition",
+                  "shrink-0 rounded-md border px-3 py-2 text-sm font-medium transition-colors",
                   item.id === tournament?.id
-                    ? "border-cyan-300 bg-cyan-300 text-slate-950"
-                    : "border-white/10 bg-white/[0.06] text-slate-300",
+                    ? "border-slate-900 bg-slate-900 text-white"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
                 )}
                 key={item.id}
-                onClick={() => setSelectedTournamentId(item.id)}
+                onClick={() => selectTournament(item.id)}
                 type="button"
               >
                 {item.name}
@@ -493,69 +550,76 @@ export function FootballLiveCentre({
         ) : null}
 
         {!tournament ? (
-          <section className="rounded-3xl border border-white/10 bg-white/[0.05] px-5 py-16 text-center">
-            <Trophy className="mx-auto h-12 w-12 text-cyan-300" />
-            <h2 className="mt-5 text-2xl font-black">Fixtures coming soon</h2>
-            <p className="mx-auto mt-2 max-w-sm text-sm text-slate-400">
-              The tournament organisers have not published a football tournament
-              yet. Keep this page open and it will refresh automatically.
+          <section className="rounded-lg border border-slate-200 bg-white px-5 py-14 text-center">
+            <Trophy className="mx-auto h-9 w-9 text-slate-400" />
+            <h2 className="mt-4 text-xl font-semibold">Fixtures coming soon</h2>
+            <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500">
+              The organisers have not published a football tournament yet. This
+              page will refresh automatically.
             </p>
           </section>
         ) : (
           <>
-            <section className="mb-6 flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-cyan-300">
+            <section className="mb-6 flex items-end justify-between gap-4">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
                   {tournament.format === "league" ? (
                     <Radio className="h-3.5 w-3.5" />
                   ) : (
                     <Trophy className="h-3.5 w-3.5" />
                   )}
-                  {tournament.format === "league"
-                    ? "League table"
-                    : "Knockout cup"}
+                  {tournament.format === "league" ? "League" : "Knockout"}
                 </div>
-                <h2 className="mt-1 text-2xl font-black sm:text-3xl">
+                <h2 className="mt-1 truncate text-2xl font-semibold text-slate-950">
                   {tournament.name}
                 </h2>
               </div>
-              <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-300">
+              <span className="shrink-0 text-xs font-medium capitalize text-slate-500">
                 {tournament.status}
               </span>
             </section>
 
-            {liveMatches.length > 0 ? (
-              <section className="mb-8 space-y-4">
-                <h2 className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.16em] text-rose-300">
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-rose-400" />
-                  Live now
-                </h2>
-                <div className="grid gap-4">
-                  {liveMatches.map((match) => (
-                    <LiveMatchHero
-                      highlighted={highlightedMatchId === match.id}
-                      key={match.id}
-                      match={match}
-                      teams={initialTeams}
-                    />
-                  ))}
-                </div>
-              </section>
-            ) : (
-              <section className="mb-8 rounded-2xl border border-white/10 bg-white/[0.05] p-5">
-                <p className="flex items-center gap-2 text-sm font-semibold text-slate-300">
-                  <CalendarClock className="h-4 w-4 text-cyan-300" />
-                  No match is live right now
-                </p>
-                {upcomingMatches[0] ? (
-                  <p className="mt-2 text-xs text-slate-500">
-                    Next: {formatKickoff(upcomingMatches[0].kickoffAt)}
+            <section className="mb-7">
+              <h2 className="mb-3 text-base font-semibold text-slate-950">
+                Live match
+              </h2>
+              {liveMatch ? (
+                <LiveMatch
+                  highlighted={highlightedMatchId === liveMatch.id}
+                  match={liveMatch}
+                  teams={initialTeams}
+                />
+              ) : (
+                <div className="rounded-lg border border-slate-200 bg-white px-4 py-4">
+                  <p className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                    <CalendarClock className="h-4 w-4 text-slate-400" />
+                    No match is live right now
                   </p>
-                ) : null}
-              </section>
-            )}
+                  {upcomingMatches[0] ? (
+                    <p className="mt-1.5 pl-6 text-xs text-slate-500">
+                      Next fixture: {formatKickoff(upcomingMatches[0].kickoffAt)}
+                    </p>
+                  ) : null}
+                </div>
+              )}
+            </section>
 
-            <section className="mb-8">
+            {upcomingMatches.length > 0 ? (
+              <section className="mb-7">
+                <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-slate-950">
+                  <CalendarClock className="h-4 w-4 text-slate-500" />
+                  Fixtures
+                </h2>
+                <MatchList
+                  expanded={showAllFixtures}
+                  matches={upcomingMatches}
+                  onExpand={() => setShowAllFixtures(true)}
+                  teams={initialTeams}
+                />
+              </section>
+            ) : null}
+
+            <section className="mb-7">
               {tournament.format === "league" ? (
                 <FootballStandings
                   compact
@@ -570,39 +634,18 @@ export function FootballLiveCentre({
               )}
             </section>
 
-            {upcomingMatches.length > 0 ? (
-              <section className="mb-8">
-                <h2 className="mb-3 flex items-center gap-2 text-sm font-black uppercase tracking-[0.16em] text-cyan-200">
-                  <CalendarClock className="h-4 w-4" />
-                  Fixtures
-                </h2>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {upcomingMatches.map((match) => (
-                    <FixtureCard
-                      key={match.id}
-                      match={match}
-                      teams={initialTeams}
-                    />
-                  ))}
-                </div>
-              </section>
-            ) : null}
-
             {results.length > 0 ? (
               <section>
-                <h2 className="mb-3 flex items-center gap-2 text-sm font-black uppercase tracking-[0.16em] text-emerald-200">
-                  <CheckCircle2 className="h-4 w-4" />
+                <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-slate-950">
+                  <CheckCircle2 className="h-4 w-4 text-slate-500" />
                   Results
                 </h2>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {results.map((match) => (
-                    <FixtureCard
-                      key={match.id}
-                      match={match}
-                      teams={initialTeams}
-                    />
-                  ))}
-                </div>
+                <MatchList
+                  expanded={showAllResults}
+                  matches={results}
+                  onExpand={() => setShowAllResults(true)}
+                  teams={initialTeams}
+                />
               </section>
             ) : null}
           </>

@@ -58,29 +58,32 @@ function normalizeBadgeUrl(url: string) {
 
 function adminPath(eventId: string, params: Record<string, string>) {
   const searchParams = new URLSearchParams(params);
-  return `/admin/events/${eventId}/football?${searchParams.toString()}`;
+  return `/admin/events/${eventId}/teams?${searchParams.toString()}`;
 }
 
-async function getEventSlug(eventId: string) {
+async function getEvent(eventId: string) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("events")
-    .select("slug")
+    .select("slug,sport")
     .eq("id", eventId)
     .single();
 
-  return data?.slug;
+  return data;
 }
 
 async function revalidateEventPages(eventId: string) {
-  const slug = await getEventSlug(eventId);
+  const event = await getEvent(eventId);
 
   revalidatePath(`/admin/events/${eventId}`);
-  revalidatePath(`/admin/events/${eventId}/football`);
+  revalidatePath(`/admin/events/${eventId}/teams`);
+  if (event) {
+    revalidatePath(`/admin/events/${eventId}/${event.sport}`);
+  }
 
-  if (slug) {
-    revalidatePath(`/events/${slug}`);
-    revalidatePath(`/events/${slug}/football`);
+  if (event?.slug) {
+    revalidatePath(`/events/${event.slug}`);
+    revalidatePath(`/events/${event.slug}/${event.sport}`);
   }
 }
 

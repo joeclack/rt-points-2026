@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { signup } from "@/app/auth/actions";
-import { Button } from "@/components/ui/button";
+import { PendingSubmitButton } from "@/components/pending-submit-button";
 import {
   Card,
   CardContent,
@@ -37,9 +37,13 @@ export default async function SignupPage({
                 {error}
               </p>
             ) : null}
-            <Button className="w-full" type="submit">
+            <PendingSubmitButton
+              className="w-full"
+              pendingLabel="Creating account..."
+              type="submit"
+            >
               Create account
-            </Button>
+            </PendingSubmitButton>
           </form>
           <p className="text-center text-sm text-slate-600">
             Already registered?{" "}
