@@ -37,6 +37,9 @@ type MatchRow = {
   next_match_slot: "home" | "away" | null;
   started_at: string | null;
   second_half_started_at: string | null;
+  clock_paused_at: string | null;
+  first_half_stoppage_seconds: number;
+  second_half_stoppage_seconds: number;
   ended_at: string | null;
   updated_at: string;
 };
@@ -75,6 +78,9 @@ function mapMatch(row: MatchRow): FootballMatch {
     nextMatchSlot: row.next_match_slot,
     startedAt: row.started_at,
     secondHalfStartedAt: row.second_half_started_at,
+    clockPausedAt: row.clock_paused_at,
+    firstHalfStoppageSeconds: row.first_half_stoppage_seconds,
+    secondHalfStoppageSeconds: row.second_half_stoppage_seconds,
     endedAt: row.ended_at,
     updatedAt: row.updated_at,
   };
@@ -131,6 +137,9 @@ const sampleTournament: FootballTournament = {
       nextMatchSlot: null,
       startedAt: new Date().toISOString(),
       secondHalfStartedAt: null,
+      clockPausedAt: null,
+      firstHalfStoppageSeconds: 0,
+      secondHalfStoppageSeconds: 0,
       endedAt: null,
       updatedAt: new Date().toISOString(),
     },
@@ -153,6 +162,9 @@ const sampleTournament: FootballTournament = {
       nextMatchSlot: null,
       startedAt: null,
       secondHalfStartedAt: null,
+      clockPausedAt: null,
+      firstHalfStoppageSeconds: 0,
+      secondHalfStoppageSeconds: 0,
       endedAt: null,
       updatedAt: new Date().toISOString(),
     },
@@ -172,7 +184,7 @@ export async function getAdminFootballTournaments(eventId: string) {
   const { data: tournaments, error } = await supabase
     .from("football_tournaments")
     .select(
-      "id,event_id,name,format,start_stage,status,win_points,draw_points,loss_points,tournament_teams:football_tournament_teams(team_id,seed),matches:football_matches(id,tournament_id,event_id,home_team_id,away_team_id,stage,round_number,position,kickoff_at,venue,status,home_score,away_score,winner_team_id,next_match_id,next_match_slot,started_at,second_half_started_at,ended_at,updated_at)",
+      "id,event_id,name,format,start_stage,status,win_points,draw_points,loss_points,tournament_teams:football_tournament_teams(team_id,seed),matches:football_matches(id,tournament_id,event_id,home_team_id,away_team_id,stage,round_number,position,kickoff_at,venue,status,home_score,away_score,winner_team_id,next_match_id,next_match_slot,started_at,second_half_started_at,clock_paused_at,first_half_stoppage_seconds,second_half_stoppage_seconds,ended_at,updated_at)",
     )
     .eq("event_id", eventId)
     .order("created_at", { ascending: false });

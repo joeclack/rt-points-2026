@@ -368,7 +368,7 @@ async function readManagedMatch(
   const { data: match, error } = await supabase
     .from("football_matches")
     .select(
-      "id,tournament_id,event_id,home_team_id,away_team_id,status,home_score,away_score,next_match_id,next_match_slot,winner_team_id,second_half_started_at",
+      "id,tournament_id,event_id,home_team_id,away_team_id,status,home_score,away_score,next_match_id,next_match_slot,winner_team_id,second_half_started_at,clock_paused_at,first_half_stoppage_seconds,second_half_stoppage_seconds",
     )
     .eq("id", matchId)
     .eq("tournament_id", tournamentId)
@@ -400,6 +400,8 @@ async function addMatchHistory(
     | "kickoff"
     | "halftime"
     | "resume"
+    | "pause_clock"
+    | "resume_clock"
     | "full_time"
     | "reopen",
   homeScore: number,
@@ -563,6 +565,27 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
   };
   const context = await readManagedMatch(eventId, tournamentId, matchId);
   const now = new Date().toISOString();
+  const activeStoppageSeconds = context.match.clock_paused_at
+    ? Math.max(
+        0,
+        Math.floor(
+          (new Date(now).getTime() -
+            new Date(context.match.clock_paused_at).getTime()) /
+            1000,
+        ),
+      )
+    : 0;
+  const stoppageUpdate = context.match.second_half_started_at
+    ? {
+        clock_paused_at: null,
+        second_half_stoppage_seconds:
+          context.match.second_half_stoppage_seconds + activeStoppageSeconds,
+      }
+    : {
+        clock_paused_at: null,
+        first_half_stoppage_seconds:
+          context.match.first_half_stoppage_seconds + activeStoppageSeconds,
+      };
 
   if (command === "start") {
     if (
@@ -579,6 +602,9 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
         status: "live",
         started_at: now,
         second_half_started_at: null,
+        clock_paused_at: null,
+        first_half_stoppage_seconds: 0,
+        second_half_stoppage_seconds: 0,
         ended_at: null,
       })
       .eq("id", matchId);
@@ -608,7 +634,7 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
 
     const { error } = await context.supabase
       .from("football_matches")
-      .update({ status: "halftime" })
+      .update({ status: "halftime", ...stoppageUpdate })
       .eq("id", matchId);
 
     if (error) {
@@ -622,14 +648,18 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
       context.match.away_score,
       "Half-time",
     );
-  } else if (command === "resume") {
+  } else if (command === "start_second_half") {
     if (context.match.status !== "halftime") {
       failMatch("Only a half-time match can resume");
     }
 
     const { error } = await context.supabase
       .from("football_matches")
-      .update({ status: "live", second_half_started_at: now })
+      .update({
+        status: "live",
+        second_half_started_at: now,
+        clock_paused_at: null,
+      })
       .eq("id", matchId);
 
     if (error) {
@@ -642,6 +672,52 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
       context.match.home_score,
       context.match.away_score,
       "Second half started",
+    );
+  } else if (command === "pause_clock") {
+    if (context.match.status !== "live") {
+      failMatch("Only a live match clock can be paused");
+    }
+
+    if (context.match.clock_paused_at) {
+      failMatch("The match clock is already paused");
+    }
+
+    const { error } = await context.supabase
+      .from("football_matches")
+      .update({ clock_paused_at: now })
+      .eq("id", matchId);
+
+    if (error) {
+      failMatch(error.message);
+    }
+
+    await addMatchHistory(
+      context,
+      "pause_clock",
+      context.match.home_score,
+      context.match.away_score,
+      "Clock paused for a stoppage",
+    );
+  } else if (command === "resume_clock") {
+    if (context.match.status !== "live" || !context.match.clock_paused_at) {
+      failMatch("The match clock is not paused");
+    }
+
+    const { error } = await context.supabase
+      .from("football_matches")
+      .update(stoppageUpdate)
+      .eq("id", matchId);
+
+    if (error) {
+      failMatch(error.message);
+    }
+
+    await addMatchHistory(
+      context,
+      "resume_clock",
+      context.match.home_score,
+      context.match.away_score,
+      `Clock resumed after ${activeStoppageSeconds} seconds`,
     );
   } else if (command === "finish") {
     if (!["live", "halftime"].includes(context.match.status)) {
@@ -666,6 +742,7 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
       .update({
         status: "full_time",
         winner_team_id: winnerTeamId,
+        ...stoppageUpdate,
         ended_at: now,
       })
       .eq("id", matchId);
@@ -749,6 +826,7 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
         status: "live",
         winner_team_id: null,
         second_half_started_at: now,
+        clock_paused_at: null,
         ended_at: null,
       })
       .eq("id", matchId);
@@ -780,8 +858,12 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
           ? "Match is live"
           : command === "halftime"
             ? "Half-time set"
-            : command === "resume"
-              ? "Match resumed"
+            : command === "start_second_half"
+              ? "Second half started"
+              : command === "pause_clock"
+                ? "Clock paused"
+                : command === "resume_clock"
+                  ? "Clock resumed"
               : command === "finish"
                 ? "Full-time result published"
                 : "Match reopened",
@@ -795,8 +877,12 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
           ? "Match is live"
           : command === "halftime"
             ? "Half-time set"
-            : command === "resume"
-              ? "Match resumed"
+            : command === "start_second_half"
+              ? "Second half started"
+              : command === "pause_clock"
+                ? "Clock paused"
+                : command === "resume_clock"
+                  ? "Clock resumed"
               : command === "finish"
                 ? "Full-time result published"
                 : "Match reopened",

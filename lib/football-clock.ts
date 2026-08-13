@@ -1,12 +1,16 @@
 import type { FootballMatch } from "@/lib/football-types";
 
 export type FootballClock = {
-  addedTime: boolean;
+  addedTimePlayedLabel: string | null;
+  addedTimeNeededLabel: string;
+  addedTimeNeededSeconds: number;
   clockLabel: string;
+  isInAddedTime: boolean;
+  isPaused: boolean;
   periodLabel: "First half" | "Second half";
 };
 
-function formatClock(totalSeconds: number) {
+export function formatFootballDuration(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
 
@@ -34,16 +38,36 @@ export function getFootballClock(
     return null;
   }
 
+  const pausedAt = match.clockPausedAt
+    ? new Date(match.clockPausedAt).getTime()
+    : Number.NaN;
+  const activeStoppageSeconds = Number.isFinite(pausedAt)
+    ? Math.max(0, Math.floor((now - pausedAt) / 1000))
+    : 0;
+  const recordedStoppageSeconds = isSecondHalf
+    ? match.secondHalfStoppageSeconds
+    : match.firstHalfStoppageSeconds;
+  const addedTimeNeededSeconds =
+    recordedStoppageSeconds + activeStoppageSeconds;
   const halfSeconds = Math.max(1, Math.floor((matchMinutes * 60) / 2));
-  const elapsedSeconds = Math.max(0, Math.floor((now - periodStart) / 1000));
-  const addedTime = elapsedSeconds >= halfSeconds;
-  const displaySeconds = addedTime
-    ? elapsedSeconds - halfSeconds
-    : elapsedSeconds + (isSecondHalf ? halfSeconds : 0);
+  const elapsedSeconds = Math.max(
+    0,
+    Math.floor((now - periodStart) / 1000) - addedTimeNeededSeconds,
+  );
+  const isInAddedTime = elapsedSeconds >= halfSeconds;
+  const addedTimePlayedSeconds = Math.max(0, elapsedSeconds - halfSeconds);
+  const displaySeconds = Math.min(elapsedSeconds, halfSeconds) +
+    (isSecondHalf ? halfSeconds : 0);
 
   return {
-    addedTime,
-    clockLabel: `${addedTime ? "+" : ""}${formatClock(displaySeconds)}`,
+    addedTimePlayedLabel: isInAddedTime
+      ? `+${formatFootballDuration(addedTimePlayedSeconds)}`
+      : null,
+    addedTimeNeededLabel: `+${formatFootballDuration(addedTimeNeededSeconds)}`,
+    addedTimeNeededSeconds,
+    clockLabel: formatFootballDuration(displaySeconds),
+    isInAddedTime,
+    isPaused: Number.isFinite(pausedAt),
     periodLabel: isSecondHalf ? "Second half" : "First half",
   };
 }

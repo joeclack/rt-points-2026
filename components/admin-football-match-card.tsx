@@ -26,7 +26,10 @@ import { StatusPill } from "@/components/status-pill";
 import { TeamBadge } from "@/components/team-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getFootballClock } from "@/lib/football-clock";
+import {
+  formatFootballDuration,
+  getFootballClock,
+} from "@/lib/football-clock";
 import {
   footballStageLabels,
   footballStatusLabels,
@@ -161,7 +164,12 @@ export function AdminFootballMatchCard({
     const interval = window.setInterval(tick, 1000);
 
     return () => window.clearInterval(interval);
-  }, [match.status, match.startedAt, match.secondHalfStartedAt]);
+  }, [
+    match.clockPausedAt,
+    match.status,
+    match.startedAt,
+    match.secondHalfStartedAt,
+  ]);
 
   async function adjustScore(formData: FormData) {
     if (scorePending) return;
@@ -210,20 +218,34 @@ export function AdminFootballMatchCard({
         </div>
         <div className="flex shrink-0 items-center gap-3">
           {match.status === "halftime" ? (
-            <span className="font-mono text-sm font-semibold tabular-nums text-slate-700">
-              HT
-            </span>
+            <div className="text-right">
+              <p className="font-mono text-sm font-semibold tabular-nums text-slate-700">
+                HT
+              </p>
+              <p className="text-[0.65rem] font-medium text-slate-500">
+                1H added +{formatFootballDuration(match.firstHalfStoppageSeconds)}
+              </p>
+            </div>
           ) : clock ? (
             <div className="text-right">
               <p
                 className={`font-mono text-sm font-semibold tabular-nums ${
-                  clock.addedTime ? "text-red-600" : "text-slate-900"
+                  clock.isPaused || clock.isInAddedTime
+                    ? "text-amber-700"
+                    : "text-slate-900"
                 }`}
               >
-                {clock.clockLabel}
+                {clock.addedTimePlayedLabel ?? clock.clockLabel}
               </p>
               <p className="text-[0.65rem] font-medium text-slate-500">
-                {clock.addedTime ? "Added time" : clock.periodLabel}
+                {clock.isPaused
+                  ? "Clock paused"
+                  : clock.isInAddedTime
+                    ? `of ${clock.addedTimeNeededLabel} added`
+                    : clock.periodLabel}
+              </p>
+              <p className="text-[0.65rem] font-semibold text-amber-700">
+                Added time needed {clock.addedTimeNeededLabel}
               </p>
             </div>
           ) : null}
@@ -321,13 +343,38 @@ export function AdminFootballMatchCard({
 
         {isLive ? (
           <div className="mt-6 grid gap-2 sm:grid-cols-2">
+            {match.status === "live" ? (
+              <form action={updateFootballMatchLifecycle} className="sm:col-span-2">
+                <HiddenMatchFields eventId={eventId} focused={focused} match={match} />
+                <input
+                  name="command"
+                  type="hidden"
+                  value={match.clockPausedAt ? "resume_clock" : "pause_clock"}
+                />
+                <PendingSubmitButton
+                  className="w-full"
+                  pendingLabel="Updating clock..."
+                  type="submit"
+                  variant={match.clockPausedAt ? "default" : "outline"}
+                >
+                  {match.clockPausedAt ? (
+                    <Play className="h-4 w-4" />
+                  ) : (
+                    <Pause className="h-4 w-4" />
+                  )}
+                  {match.clockPausedAt ? "Resume match clock" : "Pause for stoppage"}
+                </PendingSubmitButton>
+              </form>
+            ) : null}
             {match.status === "halftime" || !match.secondHalfStartedAt ? (
               <form action={updateFootballMatchLifecycle}>
                 <HiddenMatchFields eventId={eventId} focused={focused} match={match} />
                 <input
                   name="command"
                   type="hidden"
-                  value={match.status === "halftime" ? "resume" : "halftime"}
+                  value={
+                    match.status === "halftime" ? "start_second_half" : "halftime"
+                  }
                 />
                 <PendingSubmitButton
                   className="w-full"
@@ -346,7 +393,6 @@ export function AdminFootballMatchCard({
             ) : null}
             <form
               action={updateFootballMatchLifecycle}
-              className={match.secondHalfStartedAt ? "sm:col-span-2" : undefined}
             >
               <HiddenMatchFields eventId={eventId} focused={focused} match={match} />
               <input name="command" type="hidden" value="finish" />

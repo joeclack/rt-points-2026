@@ -75,6 +75,9 @@ type PublicFootballPayload = {
       next_match_slot: "home" | "away" | null;
       started_at: string | null;
       second_half_started_at: string | null;
+      clock_paused_at: string | null;
+      first_half_stoppage_seconds: number;
+      second_half_stoppage_seconds: number;
       ended_at: string | null;
       updated_at: string;
     }>;
@@ -113,6 +116,9 @@ function mapPublicFootball(payload: PublicFootballPayload) {
         nextMatchSlot: match.next_match_slot,
         startedAt: match.started_at,
         secondHalfStartedAt: match.second_half_started_at,
+        clockPausedAt: match.clock_paused_at,
+        firstHalfStoppageSeconds: match.first_half_stoppage_seconds,
+        secondHalfStoppageSeconds: match.second_half_stoppage_seconds,
         endedAt: match.ended_at,
         updatedAt: match.updated_at,
       })),
@@ -197,22 +203,37 @@ function LiveMatch({
         <div className="text-center">
           <p
             className={`font-mono text-base font-semibold tabular-nums ${
-              clock?.addedTime ? "text-red-600" : "text-slate-950"
+              clock?.isPaused || clock?.isInAddedTime
+                ? "text-amber-700"
+                : "text-slate-950"
             }`}
           >
-            {match.status === "halftime" ? "HT" : clock?.clockLabel ?? "0:00"}
+            {match.status === "halftime"
+              ? "HT"
+              : clock?.addedTimePlayedLabel ?? clock?.clockLabel ?? "0:00"}
           </p>
           <p className="text-[0.65rem] font-medium text-slate-500">
             {match.status === "halftime"
               ? "Half-time"
-              : clock?.addedTime
-                ? "Added time"
+              : clock?.isPaused
+                ? "Clock paused"
+                : clock?.isInAddedTime
+                  ? `of ${clock.addedTimeNeededLabel} added`
                 : clock?.periodLabel ?? "First half"}
           </p>
+          {clock ? (
+            <p className="text-[0.65rem] font-semibold text-amber-700">
+              Added time needed {clock.addedTimeNeededLabel}
+            </p>
+          ) : null}
         </div>
         <span className="flex items-center justify-self-end gap-1.5 text-xs font-semibold text-red-600">
           <span className="h-1.5 w-1.5 rounded-full bg-red-600" />
-          {match.status === "halftime" ? "HALF-TIME" : "LIVE"}
+          {match.status === "halftime"
+            ? "HALF-TIME"
+            : match.clockPausedAt
+              ? "STOPPAGE"
+              : "LIVE"}
         </span>
       </div>
 

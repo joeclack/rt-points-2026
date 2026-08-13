@@ -397,6 +397,9 @@ export type Database = {
           next_match_slot: "home" | "away" | null;
           started_at: string | null;
           second_half_started_at: string | null;
+          clock_paused_at: string | null;
+          first_half_stoppage_seconds: number;
+          second_half_stoppage_seconds: number;
           ended_at: string | null;
           created_at: string;
           updated_at: string;
@@ -433,6 +436,9 @@ export type Database = {
           next_match_slot?: "home" | "away" | null;
           started_at?: string | null;
           second_half_started_at?: string | null;
+          clock_paused_at?: string | null;
+          first_half_stoppage_seconds?: number;
+          second_half_stoppage_seconds?: number;
           ended_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -469,6 +475,9 @@ export type Database = {
           next_match_slot?: "home" | "away" | null;
           started_at?: string | null;
           second_half_started_at?: string | null;
+          clock_paused_at?: string | null;
+          first_half_stoppage_seconds?: number;
+          second_half_stoppage_seconds?: number;
           ended_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -502,6 +511,8 @@ export type Database = {
             | "kickoff"
             | "halftime"
             | "resume"
+            | "pause_clock"
+            | "resume_clock"
             | "full_time"
             | "reopen"
             | "schedule";
@@ -521,6 +532,8 @@ export type Database = {
             | "kickoff"
             | "halftime"
             | "resume"
+            | "pause_clock"
+            | "resume_clock"
             | "full_time"
             | "reopen"
             | "schedule";
@@ -540,6 +553,8 @@ export type Database = {
             | "kickoff"
             | "halftime"
             | "resume"
+            | "pause_clock"
+            | "resume_clock"
             | "full_time"
             | "reopen"
             | "schedule";
