@@ -51,7 +51,7 @@ export default async function EventDetailPage({
       label: "View tournament",
     },
     {
-      description: `Enter a ${event.teamSize}-player team for admin approval`,
+      description: `Enter a ${event.teamSize}-player team for approval`,
       href: `/events/${event.slug}/join`,
       icon: UsersRound,
       label: "Submit team",

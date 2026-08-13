@@ -1,7 +1,8 @@
-import { Trash2 } from "lucide-react";
+import { Archive, RotateCcw } from "lucide-react";
 
 import {
-  deleteEvent,
+  archiveEvent,
+  restoreEvent,
   updateEventDetails,
 } from "@/app/admin/events/actions";
 import { PendingSubmitButton } from "@/components/pending-submit-button";
@@ -99,16 +100,33 @@ export default async function AdminEventSettingsPage({
       </Card>
 
       {isOwner ? (
-        <Card className="mt-6 border-red-200">
-          <CardHeader><CardTitle className="text-lg text-red-700">Delete tournament</CardTitle></CardHeader>
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="text-lg">
+              {event.status === "finished"
+                ? "Restore tournament"
+                : "Archive tournament"}
+            </CardTitle>
+          </CardHeader>
           <CardContent>
-            <p className="mb-3 text-sm text-slate-500">This permanently removes its teams, fixtures and results.</p>
-            <form action={deleteEvent} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+            <p className="mb-3 text-sm text-slate-500">
+              {event.status === "finished"
+                ? "Restore public access and return this tournament to the active list."
+                : "Hide this tournament from public pages while preserving its teams, fixtures and results."}
+            </p>
+            <form action={event.status === "finished" ? restoreEvent : archiveEvent}>
               <input name="event_id" type="hidden" value={event.id} />
-              <Input aria-label={`Type ${event.name} to confirm tournament deletion`} name="confirmation" placeholder={`Type ${event.name}`} required />
-              <PendingSubmitButton pendingLabel="Deleting..." type="submit" variant="outline">
-                <Trash2 className="h-4 w-4" />
-                Delete tournament
+              <PendingSubmitButton
+                pendingLabel={event.status === "finished" ? "Restoring..." : "Archiving..."}
+                type="submit"
+                variant="outline"
+              >
+                {event.status === "finished" ? (
+                  <RotateCcw className="h-4 w-4" />
+                ) : (
+                  <Archive className="h-4 w-4" />
+                )}
+                {event.status === "finished" ? "Restore tournament" : "Archive tournament"}
               </PendingSubmitButton>
             </form>
           </CardContent>

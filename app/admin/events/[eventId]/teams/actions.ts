@@ -157,6 +157,34 @@ export async function deleteTeam(formData: FormData) {
   }
 
   const supabase = await createClient();
+  const [{ data: footballMatches }, { data: basketballMatches }] =
+    await Promise.all([
+      supabase
+        .from("football_matches")
+        .select("id")
+        .eq("event_id", eventId)
+        .or(
+          `home_team_id.eq.${teamId},away_team_id.eq.${teamId},winner_team_id.eq.${teamId}`,
+        )
+        .limit(1),
+      supabase
+        .from("basketball_matches")
+        .select("id")
+        .eq("event_id", eventId)
+        .or(
+          `home_team_id.eq.${teamId},away_team_id.eq.${teamId},winner_team_id.eq.${teamId}`,
+        )
+        .limit(1),
+    ]);
+
+  if (footballMatches?.length || basketballMatches?.length) {
+    redirect(
+      adminPath(eventId, {
+        error: "This team cannot be deleted because it is in use by a tournament fixture",
+      }),
+    );
+  }
+
   const { error } = await supabase
     .from("teams")
     .delete()
@@ -164,7 +192,14 @@ export async function deleteTeam(formData: FormData) {
     .eq("event_id", eventId);
 
   if (error) {
-    redirect(adminPath(eventId, { error: error.message }));
+    redirect(
+      adminPath(eventId, {
+        error:
+          error.code === "23503"
+            ? "This team cannot be deleted because it is in use by a tournament fixture"
+            : error.message,
+      }),
+    );
   }
 
   await revalidateEventPages(eventId);

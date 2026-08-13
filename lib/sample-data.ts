@@ -17,6 +17,7 @@ export type EventSummary = {
   teamSize: number;
   footballMatchMinutes: number;
   sport: "football" | "basketball";
+  status: "draft" | "live" | "finished";
   teams: Team[];
   viewerAccessCode?: string | null;
   adminRole?: "owner" | "admin";
@@ -62,6 +63,7 @@ export const sampleEvents: EventSummary[] = [
     teamSize: 5,
     footballMatchMinutes: 20,
     sport: "football",
+    status: "live",
     teams: sampleTeams,
   },
   {
@@ -76,6 +78,7 @@ export const sampleEvents: EventSummary[] = [
     teamSize: 5,
     footballMatchMinutes: 20,
     sport: "football",
+    status: "live",
     teams: sampleTeams.slice(0, 3),
   },
 ];

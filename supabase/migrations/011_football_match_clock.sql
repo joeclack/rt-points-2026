@@ -32,6 +32,7 @@ begin
     'football_enabled', events.football_enabled,
     'team_size', events.team_size,
     'sport', events.sport,
+    'status', events.status,
     'football_match_minutes', events.football_match_minutes,
     'teams', coalesce(
       jsonb_agg(

@@ -59,7 +59,7 @@ export default async function AdminEventPage({
       value: event.viewerAccessCode ? "On" : "Open",
     },
     {
-      detail: "Name, date, location and deletion",
+      detail: "Name, date, location and archiving",
       href: `/admin/events/${event.id}/settings`,
       icon: Settings,
       label: "Settings",
@@ -72,8 +72,12 @@ export default async function AdminEventPage({
       <TeamRequestsRealtimeRefresh eventId={event.id} />
       <header className="mb-6 border-b border-slate-200 pb-6">
         <div className="flex flex-wrap items-center gap-2">
-          <StatusPill tone="live">
-            {event.adminRole === "owner" ? "Owner" : "Shared admin"}
+          <StatusPill tone={event.status === "finished" ? "neutral" : "live"}>
+            {event.status === "finished"
+              ? "Archived"
+              : event.adminRole === "owner"
+                ? "Owner"
+                : "Shared admin"}
           </StatusPill>
           <StatusPill tone="neutral">{event.visibility}</StatusPill>
         </div>

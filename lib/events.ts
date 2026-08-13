@@ -18,6 +18,7 @@ type EventRow = {
   team_size: number;
   football_match_minutes: number;
   sport: "football" | "basketball";
+  status: "draft" | "live" | "finished";
 };
 
 type TeamRow = {
@@ -83,6 +84,7 @@ function mapEvent(
     teamSize: row.team_size,
     footballMatchMinutes: row.football_match_minutes,
     sport: row.sport,
+    status: row.status,
     teams,
     adminRole,
   };
@@ -129,9 +131,10 @@ export async function searchPublicEvents(query = "") {
   let eventQuery = supabase
     .from("events")
     .select(
-      "id,name,slug,description,date_label,location,visibility,football_enabled,team_size,football_match_minutes,sport",
+      "id,name,slug,description,date_label,location,visibility,football_enabled,team_size,football_match_minutes,sport,status",
     )
-    .eq("visibility", "public");
+    .eq("visibility", "public")
+    .neq("status", "finished");
 
   if (normalizedQuery) {
     const escapedQuery = normalizedQuery.replace(/[%_]/g, "\\$&");
@@ -187,6 +190,7 @@ export async function getPublicEventShellBySlug(slug: string) {
         team_size: event.teamSize,
         football_match_minutes: event.footballMatchMinutes,
         sport: event.sport,
+        status: event.status,
       },
       [],
     );
@@ -196,10 +200,11 @@ export async function getPublicEventShellBySlug(slug: string) {
   const { data: event, error } = await supabase
     .from("events")
     .select(
-      "id,name,slug,description,date_label,location,visibility,football_enabled,team_size,football_match_minutes,sport",
+      "id,name,slug,description,date_label,location,visibility,football_enabled,team_size,football_match_minutes,sport,status",
     )
     .eq("slug", slug)
     .eq("visibility", "public")
+    .neq("status", "finished")
     .single();
 
   if (error || !event) {
@@ -259,7 +264,7 @@ export async function getAdminEvents(userId?: string) {
   const { data, error } = await supabase
     .from("event_admins")
     .select(
-      "role,events!inner(id,name,slug,description,date_label,location,visibility,football_enabled,team_size,football_match_minutes,sport)",
+      "role,events!inner(id,name,slug,description,date_label,location,visibility,football_enabled,team_size,football_match_minutes,sport,status)",
     )
     .eq("user_id", adminUserId)
     .order("created_at", { ascending: false });
@@ -302,7 +307,7 @@ const getAdminEventByIdCached = cache(async function getAdminEventByIdCached(
   const { data: membership, error } = await supabase
     .from("event_admins")
     .select(
-      "role,events!inner(id,name,slug,description,date_label,location,visibility,football_enabled,team_size,football_match_minutes,sport,teams(id,name,colour,badge_text,badge_url),event_viewer_access_codes(access_code))",
+      "role,events!inner(id,name,slug,description,date_label,location,visibility,football_enabled,team_size,football_match_minutes,sport,status,teams(id,name,colour,badge_text,badge_url),event_viewer_access_codes(access_code))",
     )
     .eq("event_id", id)
     .eq("user_id", adminUserId)

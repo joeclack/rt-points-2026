@@ -23,6 +23,7 @@ type AdminEventSidebarProps = {
   eventName: string;
   eventSlug: string;
   sport: "football" | "basketball";
+  status: "draft" | "live" | "finished";
 };
 
 export function AdminEventSidebar({
@@ -31,6 +32,7 @@ export function AdminEventSidebar({
   eventName,
   eventSlug,
   sport,
+  status,
 }: AdminEventSidebarProps) {
   const pathname = usePathname();
   const items = [
@@ -96,7 +98,11 @@ export function AdminEventSidebar({
             {eventName}
           </h2>
           <p className="mt-1 text-xs capitalize text-slate-500">
-            {adminRole === "owner" ? "Owner" : "Shared admin"}
+            {status === "finished"
+              ? "Archived"
+              : adminRole === "owner"
+                ? "Owner"
+                : "Shared admin"}
           </p>
         </div>
 
@@ -122,14 +128,16 @@ export function AdminEventSidebar({
         </nav>
 
         <div className="mt-4 hidden border-t border-slate-200 pt-4 md:block">
-          <Link
-            className={itemClass(false)}
-            href={`/events/${eventSlug}`}
-            target="_blank"
-          >
-            <ExternalLink className="h-4 w-4" />
-            Public page
-          </Link>
+          {status !== "finished" ? (
+            <Link
+              className={itemClass(false)}
+              href={`/events/${eventSlug}`}
+              target="_blank"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Public page
+            </Link>
+          ) : null}
           <form action={logout}>
             <button className={cn(itemClass(false), "mt-1 w-full")} type="submit">
               <LogOut className="h-4 w-4" />

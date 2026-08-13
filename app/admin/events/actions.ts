@@ -197,9 +197,8 @@ export async function updateEventDetails(formData: FormData) {
   redirect(eventAdminSectionPath(eventId, "settings", { message: "Tournament details saved" }));
 }
 
-export async function deleteEvent(formData: FormData) {
+export async function archiveEvent(formData: FormData) {
   const eventId = String(formData.get("event_id") ?? "").trim();
-  const confirmation = String(formData.get("confirmation") ?? "").trim();
 
   if (!eventId) {
     redirect("/admin/events?error=Missing%20tournament");
@@ -208,7 +207,7 @@ export async function deleteEvent(formData: FormData) {
   const { supabase, user } = await requireUser();
   const { data: event, error: eventError } = await supabase
     .from("events")
-    .select("name,owner_id")
+    .select("name,owner_id,slug,sport")
     .eq("id", eventId)
     .single();
 
@@ -219,20 +218,15 @@ export async function deleteEvent(formData: FormData) {
   if (event.owner_id !== user.id) {
     redirect(
       eventAdminSectionPath(eventId, "settings", {
-        error: "Only the tournament owner can delete it",
+        error: "Only the tournament owner can archive it",
       }),
     );
   }
 
-  if (confirmation !== event.name) {
-    redirect(
-      eventAdminSectionPath(eventId, "settings", {
-        error: `Type ${event.name} to confirm deletion`,
-      }),
-    );
-  }
-
-  const { error } = await supabase.from("events").delete().eq("id", eventId);
+  const { error } = await supabase
+    .from("events")
+    .update({ status: "finished" })
+    .eq("id", eventId);
 
   if (error) {
     redirect(eventAdminSectionPath(eventId, "settings", { error: error.message }));
@@ -240,7 +234,48 @@ export async function deleteEvent(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/admin/events");
-  redirect("/admin/events?message=Tournament%20deleted");
+  revalidatePath(`/events/${event.slug}`);
+  revalidatePath(`/events/${event.slug}/${event.sport}`);
+  redirect("/admin/events?message=Tournament%20archived");
+}
+
+export async function restoreEvent(formData: FormData) {
+  const eventId = String(formData.get("event_id") ?? "").trim();
+
+  if (!eventId) {
+    redirect("/admin/events?error=Missing%20tournament");
+  }
+
+  const { supabase, user } = await requireUser();
+  const { data: event, error: eventError } = await supabase
+    .from("events")
+    .select("owner_id,slug,sport")
+    .eq("id", eventId)
+    .single();
+
+  if (eventError || !event) {
+    redirect("/admin/events?error=Tournament%20not%20found");
+  }
+
+  if (event.owner_id !== user.id) {
+    redirect("/admin/events?error=Only%20the%20tournament%20owner%20can%20restore%20it");
+  }
+
+  const { error } = await supabase
+    .from("events")
+    .update({ status: "draft" })
+    .eq("id", eventId);
+
+  if (error) {
+    redirect(`/admin/events?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin/events");
+  revalidatePath(`/admin/events/${eventId}`);
+  revalidatePath(`/events/${event.slug}`);
+  revalidatePath(`/events/${event.slug}/${event.sport}`);
+  redirect(`/admin/events/${eventId}/settings?message=Tournament%20restored`);
 }
 
 export async function updateViewerAccessCode(formData: FormData) {

@@ -82,12 +82,14 @@ export default async function AdminEventFootballPage({
             Tournaments, fixtures and live match control.
           </p>
         </div>
-        <Button asChild variant="outline">
-          <Link href={`/events/${event.slug}/football`}>
-            <ExternalLink className="h-4 w-4" />
-            Public match centre
-          </Link>
-        </Button>
+        {event.status !== "finished" ? (
+          <Button asChild variant="outline">
+            <Link href={`/events/${event.slug}/football`}>
+              <ExternalLink className="h-4 w-4" />
+              Public match centre
+            </Link>
+          </Button>
+        ) : null}
       </header>
 
       {message ? (

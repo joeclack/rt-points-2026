@@ -24,6 +24,7 @@ export default async function AdminEventLayout({
           eventName={event.name}
           eventSlug={event.slug}
           sport={event.sport}
+          status={event.status}
         />
         <section className="min-w-0">{children}</section>
       </div>
