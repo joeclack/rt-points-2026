@@ -26,7 +26,7 @@ to authenticated
 using (public.is_event_admin(event_id));
 
 alter table public.football_match_events
-drop constraint football_match_events_event_type_check;
+drop constraint if exists football_match_events_event_type_check;
 
 alter table public.football_match_events
 add constraint football_match_events_event_type_check check (

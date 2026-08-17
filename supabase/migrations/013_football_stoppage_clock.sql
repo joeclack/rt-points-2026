@@ -6,7 +6,7 @@ add column second_half_stoppage_seconds integer not null default 0
   check (second_half_stoppage_seconds >= 0);
 
 alter table public.football_match_events
-drop constraint football_match_events_event_type_check;
+drop constraint if exists football_match_events_event_type_check;
 
 alter table public.football_match_events
 add constraint football_match_events_event_type_check check (
@@ -17,6 +17,11 @@ add constraint football_match_events_event_type_check check (
     'resume',
     'pause_clock',
     'resume_clock',
+    'start_stoppage',
+    'end_stoppage',
+    'claim_control',
+    'take_control',
+    'release_control',
     'full_time',
     'reopen',
     'schedule'

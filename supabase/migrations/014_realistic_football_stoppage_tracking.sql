@@ -48,6 +48,9 @@ add constraint football_match_events_event_type_check check (
     'resume_clock',
     'start_stoppage',
     'end_stoppage',
+    'claim_control',
+    'take_control',
+    'release_control',
     'full_time',
     'reopen',
     'schedule'
