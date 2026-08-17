@@ -364,11 +364,11 @@ async function readManagedMatch(
   tournamentId: string,
   matchId: string,
 ) {
-  const { supabase, userId } = await requireEventAdmin(eventId);
+  const { supabase } = await requireEventAdmin(eventId);
   const { data: match, error } = await supabase
     .from("football_matches")
     .select(
-      "id,tournament_id,event_id,home_team_id,away_team_id,status,home_score,away_score,next_match_id,next_match_slot,winner_team_id,second_half_started_at,clock_paused_at,first_half_stoppage_seconds,second_half_stoppage_seconds",
+      "id,tournament_id,event_id,home_team_id,away_team_id,status,home_score,away_score,next_match_id,next_match_slot,winner_team_id,second_half_started_at,stoppage_started_at,first_half_stoppage_seconds,second_half_stoppage_seconds,control_version,controller_device_id,controller_claimed_at",
     )
     .eq("id", matchId)
     .eq("tournament_id", tournamentId)
@@ -390,51 +390,32 @@ async function readManagedMatch(
     fail(eventId, tournamentId, "Tournament not found");
   }
 
-  return { supabase, userId, match, tournament };
+  return { supabase, match, tournament };
 }
 
-async function addMatchHistory(
+function getCommandId(formData: FormData) {
+  return getText(formData, "command_id") || crypto.randomUUID();
+}
+
+function getExpectedVersion(formData: FormData) {
+  const value = getText(formData, "expected_version");
+  const version = Number(value);
+  return value && Number.isInteger(version) && version >= 0 ? version : null;
+}
+
+async function applyMatchCommand(
   context: Awaited<ReturnType<typeof readManagedMatch>>,
-  eventType:
-    | "score"
-    | "kickoff"
-    | "halftime"
-    | "resume"
-    | "pause_clock"
-    | "resume_clock"
-    | "full_time"
-    | "reopen",
-  homeScore: number,
-  awayScore: number,
-  note: string,
+  formData: FormData,
+  command: string,
+  payload: Record<string, string | number> = {},
 ) {
-  await context.supabase.from("football_match_events").insert({
-    event_id: context.match.event_id,
-    tournament_id: context.match.tournament_id,
-    match_id: context.match.id,
-    actor_id: context.userId,
-    event_type: eventType,
-    home_score: homeScore,
-    away_score: awayScore,
-    note,
+  return context.supabase.rpc("apply_football_match_command", {
+    p_command: command,
+    p_command_id: getCommandId(formData),
+    p_expected_version: getExpectedVersion(formData),
+    p_match_id: context.match.id,
+    p_payload: payload,
   });
-}
-
-async function refreshTournamentStatus(
-  context: Awaited<ReturnType<typeof readManagedMatch>>,
-) {
-  const { data: matches } = await context.supabase
-    .from("football_matches")
-    .select("status")
-    .eq("tournament_id", context.match.tournament_id);
-  const completed = (matches ?? []).every((match) =>
-    ["full_time", "cancelled"].includes(match.status),
-  );
-
-  await context.supabase
-    .from("football_tournaments")
-    .update({ status: completed ? "completed" : "live" })
-    .eq("id", context.match.tournament_id);
 }
 
 export async function adjustFootballMatchScore(formData: FormData) {
@@ -463,30 +444,18 @@ export async function adjustFootballMatchScore(formData: FormData) {
     failScore("Score change is invalid");
   }
 
-  const homeScore =
-    side === "home"
-      ? Math.max(0, context.match.home_score + delta)
-      : context.match.home_score;
-  const awayScore =
-    side === "away"
-      ? Math.max(0, context.match.away_score + delta)
-      : context.match.away_score;
-  const { error } = await context.supabase
-    .from("football_matches")
-    .update({ home_score: homeScore, away_score: awayScore })
-    .eq("id", matchId);
+  // Score deltas are commutative and serialized by the database row lock.
+  formData.delete("expected_version");
+  const { error } = await applyMatchCommand(context, formData, "score_delta", {
+    delta,
+    device_id: getText(formData, "device_id"),
+    side,
+  });
 
   if (error) {
     failScore(error.message);
   }
 
-  await addMatchHistory(
-    context,
-    "score",
-    homeScore,
-    awayScore,
-    `${side === "home" ? "Home" : "Away"} score ${delta > 0 ? "increased" : "decreased"}`,
-  );
   await revalidateFootballPages(eventId);
 }
 
@@ -521,22 +490,16 @@ export async function setFootballMatchScore(formData: FormData) {
     failScore("Scores must be whole numbers of zero or more");
   }
 
-  const { error } = await context.supabase
-    .from("football_matches")
-    .update({ home_score: homeScore, away_score: awayScore })
-    .eq("id", matchId);
+  const { error } = await applyMatchCommand(context, formData, "set_score", {
+    away_score: awayScore,
+    device_id: getText(formData, "device_id"),
+    home_score: homeScore,
+  });
 
   if (error) {
     failScore(error.message);
   }
 
-  await addMatchHistory(
-    context,
-    "score",
-    homeScore,
-    awayScore,
-    "Exact score correction",
-  );
   await revalidateFootballPages(eventId);
   if (focused) {
     redirect(
@@ -564,328 +527,33 @@ export async function updateFootballMatchLifecycle(formData: FormData) {
     fail(eventId, tournamentId, message);
   };
   const context = await readManagedMatch(eventId, tournamentId, matchId);
-  const now = new Date().toISOString();
-  const activeStoppageSeconds = context.match.clock_paused_at
-    ? Math.max(
-        0,
-        Math.floor(
-          (new Date(now).getTime() -
-            new Date(context.match.clock_paused_at).getTime()) /
-            1000,
-        ),
-      )
-    : 0;
-  const stoppageUpdate = context.match.second_half_started_at
-    ? {
-        clock_paused_at: null,
-        second_half_stoppage_seconds:
-          context.match.second_half_stoppage_seconds + activeStoppageSeconds,
-      }
-    : {
-        clock_paused_at: null,
-        first_half_stoppage_seconds:
-          context.match.first_half_stoppage_seconds + activeStoppageSeconds,
-      };
+  const { error } = await applyMatchCommand(context, formData, command, {
+    device_id: getText(formData, "device_id"),
+  });
 
-  if (command === "start") {
-    if (
-      context.match.status !== "scheduled" ||
-      !context.match.home_team_id ||
-      !context.match.away_team_id
-    ) {
-      failMatch("This match is not ready to start");
-    }
-
-    const { error } = await context.supabase
-      .from("football_matches")
-      .update({
-        status: "live",
-        started_at: now,
-        second_half_started_at: null,
-        clock_paused_at: null,
-        first_half_stoppage_seconds: 0,
-        second_half_stoppage_seconds: 0,
-        ended_at: null,
-      })
-      .eq("id", matchId);
-
-    if (error) {
-      failMatch(error.message);
-    }
-
-    await context.supabase
-      .from("football_tournaments")
-      .update({ status: "live" })
-      .eq("id", tournamentId);
-    await addMatchHistory(
-      context,
-      "kickoff",
-      context.match.home_score,
-      context.match.away_score,
-      "Match started",
-    );
-  } else if (command === "halftime") {
-    if (
-      context.match.status !== "live" ||
-      context.match.second_half_started_at
-    ) {
-      failMatch("Only the first half can reach half-time");
-    }
-
-    const { error } = await context.supabase
-      .from("football_matches")
-      .update({ status: "halftime", ...stoppageUpdate })
-      .eq("id", matchId);
-
-    if (error) {
-      failMatch(error.message);
-    }
-
-    await addMatchHistory(
-      context,
-      "halftime",
-      context.match.home_score,
-      context.match.away_score,
-      "Half-time",
-    );
-  } else if (command === "start_second_half") {
-    if (context.match.status !== "halftime") {
-      failMatch("Only a half-time match can resume");
-    }
-
-    const { error } = await context.supabase
-      .from("football_matches")
-      .update({
-        status: "live",
-        second_half_started_at: now,
-        clock_paused_at: null,
-      })
-      .eq("id", matchId);
-
-    if (error) {
-      failMatch(error.message);
-    }
-
-    await addMatchHistory(
-      context,
-      "resume",
-      context.match.home_score,
-      context.match.away_score,
-      "Second half started",
-    );
-  } else if (command === "pause_clock") {
-    if (context.match.status !== "live") {
-      failMatch("Only a live match clock can be paused");
-    }
-
-    if (context.match.clock_paused_at) {
-      failMatch("The match clock is already paused");
-    }
-
-    const { error } = await context.supabase
-      .from("football_matches")
-      .update({ clock_paused_at: now })
-      .eq("id", matchId);
-
-    if (error) {
-      failMatch(error.message);
-    }
-
-    await addMatchHistory(
-      context,
-      "pause_clock",
-      context.match.home_score,
-      context.match.away_score,
-      "Clock paused for a stoppage",
-    );
-  } else if (command === "resume_clock") {
-    if (context.match.status !== "live" || !context.match.clock_paused_at) {
-      failMatch("The match clock is not paused");
-    }
-
-    const { error } = await context.supabase
-      .from("football_matches")
-      .update(stoppageUpdate)
-      .eq("id", matchId);
-
-    if (error) {
-      failMatch(error.message);
-    }
-
-    await addMatchHistory(
-      context,
-      "resume_clock",
-      context.match.home_score,
-      context.match.away_score,
-      `Clock resumed after ${activeStoppageSeconds} seconds`,
-    );
-  } else if (command === "finish") {
-    if (!["live", "halftime"].includes(context.match.status)) {
-      failMatch("Only a started match can finish");
-    }
-
-    if (
-      context.tournament.format === "knockout" &&
-      context.match.home_score === context.match.away_score
-    ) {
-      failMatch("Knockout matches need a winner before full-time");
-    }
-
-    const winnerTeamId =
-      context.match.home_score === context.match.away_score
-        ? null
-        : context.match.home_score > context.match.away_score
-          ? context.match.home_team_id
-          : context.match.away_team_id;
-    const { error } = await context.supabase
-      .from("football_matches")
-      .update({
-        status: "full_time",
-        winner_team_id: winnerTeamId,
-        ...stoppageUpdate,
-        ended_at: now,
-      })
-      .eq("id", matchId);
-
-    if (error) {
-      failMatch(error.message);
-    }
-
-    if (
-      winnerTeamId &&
-      context.match.next_match_id &&
-      context.match.next_match_slot
-    ) {
-      const advanceQuery =
-        context.match.next_match_slot === "home"
-          ? context.supabase
-              .from("football_matches")
-              .update({ home_team_id: winnerTeamId })
-          : context.supabase
-              .from("football_matches")
-              .update({ away_team_id: winnerTeamId });
-      const { error: advanceError } = await advanceQuery
-        .eq("id", context.match.next_match_id)
-        .eq("status", "scheduled");
-
-      if (advanceError) {
-        failMatch(advanceError.message);
-      }
-    }
-
-    await addMatchHistory(
-      context,
-      "full_time",
-      context.match.home_score,
-      context.match.away_score,
-      "Full-time result published",
-    );
-    await refreshTournamentStatus(context);
-  } else if (command === "reopen") {
-    if (context.match.status !== "full_time") {
-      failMatch("Only a completed match can be reopened");
-    }
-
-    if (context.match.next_match_id && context.match.next_match_slot) {
-      const { data: nextMatch } = await context.supabase
-        .from("football_matches")
-        .select("status,home_team_id,away_team_id")
-        .eq("id", context.match.next_match_id)
-        .single();
-
-      if (nextMatch && nextMatch.status !== "scheduled") {
-        failMatch(
-          "The next knockout match has started, so this result can no longer be reopened",
-        );
-      }
-
-      if (nextMatch && context.match.winner_team_id) {
-        const currentSlotTeam =
-          context.match.next_match_slot === "home"
-            ? nextMatch.home_team_id
-            : nextMatch.away_team_id;
-
-        if (currentSlotTeam === context.match.winner_team_id) {
-          const clearSlotQuery =
-            context.match.next_match_slot === "home"
-              ? context.supabase
-                  .from("football_matches")
-                  .update({ home_team_id: null })
-              : context.supabase
-                  .from("football_matches")
-                  .update({ away_team_id: null });
-
-          await clearSlotQuery.eq("id", context.match.next_match_id);
-        }
-      }
-    }
-
-    const { error } = await context.supabase
-      .from("football_matches")
-      .update({
-        status: "live",
-        winner_team_id: null,
-        second_half_started_at: now,
-        clock_paused_at: null,
-        ended_at: null,
-      })
-      .eq("id", matchId);
-
-    if (error) {
-      failMatch(error.message);
-    }
-
-    await context.supabase
-      .from("football_tournaments")
-      .update({ status: "live" })
-      .eq("id", tournamentId);
-    await addMatchHistory(
-      context,
-      "reopen",
-      context.match.home_score,
-      context.match.away_score,
-      "Result reopened for correction",
-    );
-  } else {
-    failMatch("Match action is invalid");
+  if (error) {
+    failMatch(error.message);
   }
+
+  const messages: Record<string, string> = {
+    claim_control: "Match control claimed",
+    end_stoppage: "Stoppage tracking stopped",
+    finish: "Full-time result published",
+    halftime: "Half-time set",
+    release_control: "Match control released",
+    reopen: "Match reopened",
+    start: "Match is live",
+    start_second_half: "Second half started",
+    start_stoppage: "Stoppage tracking started",
+    take_control: "Match control taken over",
+  };
+  const message = messages[command] ?? "Match updated";
 
   await revalidateFootballPages(eventId);
   if (focused) {
     redirect(
-      `/admin/events/${eventId}/football/matches/${matchId}?message=${encodeURIComponent(
-        command === "start"
-          ? "Match is live"
-          : command === "halftime"
-            ? "Half-time set"
-            : command === "start_second_half"
-              ? "Second half started"
-              : command === "pause_clock"
-                ? "Clock paused"
-                : command === "resume_clock"
-                  ? "Clock resumed"
-              : command === "finish"
-                ? "Full-time result published"
-                : "Match reopened",
-      )}`,
+      `/admin/events/${eventId}/football/matches/${matchId}?message=${encodeURIComponent(message)}`,
     );
   }
-  redirect(
-    footballAdminPath(eventId, tournamentId, {
-      message:
-        command === "start"
-          ? "Match is live"
-          : command === "halftime"
-            ? "Half-time set"
-            : command === "start_second_half"
-              ? "Second half started"
-              : command === "pause_clock"
-                ? "Clock paused"
-                : command === "resume_clock"
-                  ? "Clock resumed"
-              : command === "finish"
-                ? "Full-time result published"
-                : "Match reopened",
-    }),
-  );
+  redirect(footballAdminPath(eventId, tournamentId, { message }));
 }

@@ -397,9 +397,12 @@ export type Database = {
           next_match_slot: "home" | "away" | null;
           started_at: string | null;
           second_half_started_at: string | null;
-          clock_paused_at: string | null;
+          stoppage_started_at: string | null;
           first_half_stoppage_seconds: number;
           second_half_stoppage_seconds: number;
+          control_version: number;
+          controller_device_id: string | null;
+          controller_claimed_at: string | null;
           ended_at: string | null;
           created_at: string;
           updated_at: string;
@@ -436,9 +439,12 @@ export type Database = {
           next_match_slot?: "home" | "away" | null;
           started_at?: string | null;
           second_half_started_at?: string | null;
-          clock_paused_at?: string | null;
+          stoppage_started_at?: string | null;
           first_half_stoppage_seconds?: number;
           second_half_stoppage_seconds?: number;
+          control_version?: number;
+          controller_device_id?: string | null;
+          controller_claimed_at?: string | null;
           ended_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -475,9 +481,12 @@ export type Database = {
           next_match_slot?: "home" | "away" | null;
           started_at?: string | null;
           second_half_started_at?: string | null;
-          clock_paused_at?: string | null;
+          stoppage_started_at?: string | null;
           first_half_stoppage_seconds?: number;
           second_half_stoppage_seconds?: number;
+          control_version?: number;
+          controller_device_id?: string | null;
+          controller_claimed_at?: string | null;
           ended_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -499,6 +508,50 @@ export type Database = {
           },
         ];
       };
+      football_match_commands: {
+        Row: {
+          id: string;
+          event_id: string;
+          tournament_id: string;
+          match_id: string;
+          actor_id: string;
+          command: string;
+          payload: Json;
+          result: Json;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          event_id: string;
+          tournament_id: string;
+          match_id: string;
+          actor_id: string;
+          command: string;
+          payload?: Json;
+          result: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          event_id?: string;
+          tournament_id?: string;
+          match_id?: string;
+          actor_id?: string;
+          command?: string;
+          payload?: Json;
+          result?: Json;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "football_match_commands_match_id_fkey";
+            columns: ["match_id"];
+            isOneToOne: false;
+            referencedRelation: "football_matches";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       football_match_events: {
         Row: {
           id: string;
@@ -513,6 +566,11 @@ export type Database = {
             | "resume"
             | "pause_clock"
             | "resume_clock"
+            | "start_stoppage"
+            | "end_stoppage"
+            | "claim_control"
+            | "take_control"
+            | "release_control"
             | "full_time"
             | "reopen"
             | "schedule";
@@ -534,6 +592,11 @@ export type Database = {
             | "resume"
             | "pause_clock"
             | "resume_clock"
+            | "start_stoppage"
+            | "end_stoppage"
+            | "claim_control"
+            | "take_control"
+            | "release_control"
             | "full_time"
             | "reopen"
             | "schedule";
@@ -555,6 +618,11 @@ export type Database = {
             | "resume"
             | "pause_clock"
             | "resume_clock"
+            | "start_stoppage"
+            | "end_stoppage"
+            | "claim_control"
+            | "take_control"
+            | "release_control"
             | "full_time"
             | "reopen"
             | "schedule";
@@ -624,6 +692,16 @@ export type Database = {
         Args: {
           event_slug: string;
           submitted_code?: string;
+        };
+        Returns: Json;
+      };
+      apply_football_match_command: {
+        Args: {
+          p_match_id: string;
+          p_command: string;
+          p_command_id: string;
+          p_expected_version?: number | null;
+          p_payload?: Json;
         };
         Returns: Json;
       };

@@ -21,10 +21,12 @@ function isoToLocalInputValue(iso: string | null) {
 
 export function KickoffInput({
   defaultIso = null,
+  disabled = false,
   id,
   required = false,
 }: {
   defaultIso?: string | null;
+  disabled?: boolean;
   id: string;
   required?: boolean;
 }) {
@@ -38,6 +40,7 @@ export function KickoffInput({
   return (
     <>
       <Input
+        disabled={disabled}
         id={id}
         onChange={(event) => setLocalValue(event.target.value)}
         required={required}

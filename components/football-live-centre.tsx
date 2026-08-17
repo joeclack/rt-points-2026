@@ -75,7 +75,7 @@ type PublicFootballPayload = {
       next_match_slot: "home" | "away" | null;
       started_at: string | null;
       second_half_started_at: string | null;
-      clock_paused_at: string | null;
+      stoppage_started_at: string | null;
       first_half_stoppage_seconds: number;
       second_half_stoppage_seconds: number;
       ended_at: string | null;
@@ -116,9 +116,12 @@ function mapPublicFootball(payload: PublicFootballPayload) {
         nextMatchSlot: match.next_match_slot,
         startedAt: match.started_at,
         secondHalfStartedAt: match.second_half_started_at,
-        clockPausedAt: match.clock_paused_at,
+        stoppageStartedAt: match.stoppage_started_at,
         firstHalfStoppageSeconds: match.first_half_stoppage_seconds,
         secondHalfStoppageSeconds: match.second_half_stoppage_seconds,
+        controlVersion: 0,
+        controllerDeviceId: null,
+        controllerClaimedAt: null,
         endedAt: match.ended_at,
         updatedAt: match.updated_at,
       })),
@@ -203,7 +206,7 @@ function LiveMatch({
         <div className="text-center">
           <p
             className={`font-mono text-base font-semibold tabular-nums ${
-              clock?.isPaused || clock?.isInAddedTime
+              clock?.isTrackingStoppage || clock?.isInAddedTime
                 ? "text-amber-700"
                 : "text-slate-950"
             }`}
@@ -215,8 +218,8 @@ function LiveMatch({
           <p className="text-[0.65rem] font-medium text-slate-500">
             {match.status === "halftime"
               ? "Half-time"
-              : clock?.isPaused
-                ? "Clock paused"
+              : clock?.isTrackingStoppage
+                ? "Stoppage being tracked"
                 : clock?.isInAddedTime
                   ? `of ${clock.addedTimeNeededLabel} added`
                 : clock?.periodLabel ?? "First half"}
@@ -231,7 +234,7 @@ function LiveMatch({
           <span className="h-1.5 w-1.5 rounded-full bg-red-600" />
           {match.status === "halftime"
             ? "HALF-TIME"
-            : match.clockPausedAt
+            : match.stoppageStartedAt
               ? "STOPPAGE"
               : "LIVE"}
         </span>

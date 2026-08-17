@@ -8,7 +8,7 @@ const baseMatch = {
   status: "live",
   startedAt: kickoff,
   secondHalfStartedAt: null,
-  clockPausedAt: null,
+  stoppageStartedAt: null,
   firstHalfStoppageSeconds: 0,
   secondHalfStoppageSeconds: 0,
 };
@@ -26,16 +26,16 @@ test("football clock uses the configured first-half length", () => {
     addedTimeNeededSeconds: 0,
     clockLabel: "7:42",
     isInAddedTime: false,
-    isPaused: false,
+    isTrackingStoppage: false,
     periodLabel: "First half",
   });
 });
 
-test("a stoppage freezes the match clock and increases added time needed", () => {
+test("a stoppage leaves the match clock running and increases added time needed", () => {
   const clock = getFootballClock(
     {
       ...baseMatch,
-      clockPausedAt: "2026-08-13T12:07:42.000Z",
+      stoppageStartedAt: "2026-08-13T12:07:42.000Z",
     },
     20,
     new Date("2026-08-13T12:09:56.000Z").getTime(),
@@ -45,23 +45,23 @@ test("a stoppage freezes the match clock and increases added time needed", () =>
     addedTimePlayedLabel: null,
     addedTimeNeededLabel: "+2:14",
     addedTimeNeededSeconds: 134,
-    clockLabel: "7:42",
+    clockLabel: "9:56",
     isInAddedTime: false,
-    isPaused: true,
+    isTrackingStoppage: true,
     periodLabel: "First half",
   });
 });
 
-test("resumed play excludes recorded stoppages from the match clock", () => {
+test("recorded stoppages do not reduce elapsed match time", () => {
   const clock = getFootballClock(
     { ...baseMatch, firstHalfStoppageSeconds: 134 },
     20,
     new Date("2026-08-13T12:09:56.000Z").getTime(),
   );
 
-  assert.equal(clock?.clockLabel, "7:42");
+  assert.equal(clock?.clockLabel, "9:56");
   assert.equal(clock?.addedTimeNeededLabel, "+2:14");
-  assert.equal(clock?.isPaused, false);
+  assert.equal(clock?.isTrackingStoppage, false);
 });
 
 test("added time played is shown separately from added time needed", () => {
@@ -72,7 +72,7 @@ test("added time played is shown separately from added time needed", () => {
   );
 
   assert.equal(clock?.clockLabel, "10:00");
-  assert.equal(clock?.addedTimePlayedLabel, "+0:30");
+  assert.equal(clock?.addedTimePlayedLabel, "+2:44");
   assert.equal(clock?.addedTimeNeededLabel, "+2:14");
   assert.equal(clock?.isInAddedTime, true);
 });
@@ -93,7 +93,7 @@ test("second-half clock continues from the half-time minute", () => {
     addedTimeNeededSeconds: 0,
     clockLabel: "13:25",
     isInAddedTime: false,
-    isPaused: false,
+    isTrackingStoppage: false,
     periodLabel: "Second half",
   });
 });

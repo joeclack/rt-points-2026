@@ -6,7 +6,7 @@ export type FootballClock = {
   addedTimeNeededSeconds: number;
   clockLabel: string;
   isInAddedTime: boolean;
-  isPaused: boolean;
+  isTrackingStoppage: boolean;
   periodLabel: "First half" | "Second half";
 };
 
@@ -38,11 +38,11 @@ export function getFootballClock(
     return null;
   }
 
-  const pausedAt = match.clockPausedAt
-    ? new Date(match.clockPausedAt).getTime()
+  const stoppageStartedAt = match.stoppageStartedAt
+    ? new Date(match.stoppageStartedAt).getTime()
     : Number.NaN;
-  const activeStoppageSeconds = Number.isFinite(pausedAt)
-    ? Math.max(0, Math.floor((now - pausedAt) / 1000))
+  const activeStoppageSeconds = Number.isFinite(stoppageStartedAt)
+    ? Math.max(0, Math.floor((now - stoppageStartedAt) / 1000))
     : 0;
   const recordedStoppageSeconds = isSecondHalf
     ? match.secondHalfStoppageSeconds
@@ -50,10 +50,7 @@ export function getFootballClock(
   const addedTimeNeededSeconds =
     recordedStoppageSeconds + activeStoppageSeconds;
   const halfSeconds = Math.max(1, Math.floor((matchMinutes * 60) / 2));
-  const elapsedSeconds = Math.max(
-    0,
-    Math.floor((now - periodStart) / 1000) - addedTimeNeededSeconds,
-  );
+  const elapsedSeconds = Math.max(0, Math.floor((now - periodStart) / 1000));
   const isInAddedTime = elapsedSeconds >= halfSeconds;
   const addedTimePlayedSeconds = Math.max(0, elapsedSeconds - halfSeconds);
   const displaySeconds = Math.min(elapsedSeconds, halfSeconds) +
@@ -67,7 +64,7 @@ export function getFootballClock(
     addedTimeNeededSeconds,
     clockLabel: formatFootballDuration(displaySeconds),
     isInAddedTime,
-    isPaused: Number.isFinite(pausedAt),
+    isTrackingStoppage: Number.isFinite(stoppageStartedAt),
     periodLabel: isSecondHalf ? "Second half" : "First half",
   };
 }

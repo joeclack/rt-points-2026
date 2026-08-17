@@ -5,11 +5,11 @@ import {
   CirclePlus,
   Clock3,
   Flag,
-  Focus,
   Pause,
   Play,
   RotateCcw,
   Save,
+  Timer,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -52,6 +52,11 @@ function HiddenMatchFields({
       <input name="event_id" type="hidden" value={eventId} />
       <input name="tournament_id" type="hidden" value={match.tournamentId} />
       <input name="match_id" type="hidden" value={match.id} />
+      <input
+        name="expected_version"
+        type="hidden"
+        value={match.controlVersion}
+      />
       {focused ? <input name="focused" type="hidden" value="true" /> : null}
     </>
   );
@@ -63,6 +68,7 @@ function TeamScoreControl({
   focused,
   match,
   pending,
+  refereeControlled,
   score,
   side,
   team,
@@ -72,6 +78,7 @@ function TeamScoreControl({
   focused: boolean;
   match: FootballMatch;
   pending: boolean;
+  refereeControlled: boolean;
   score: number;
   side: "home" | "away";
   team?: Team;
@@ -106,7 +113,9 @@ function TeamScoreControl({
               <input name="delta" type="hidden" value={delta} />
               <Button
                 aria-label={`${delta > 0 ? "Add" : "Remove"} ${team?.name ?? side} goal`}
-                disabled={pending || (delta < 0 && score === 0)}
+                disabled={
+                  refereeControlled || pending || (delta < 0 && score === 0)
+                }
                 className={focused ? "h-12 w-12" : undefined}
                 size="icon"
                 type="submit"
@@ -142,6 +151,7 @@ export function AdminFootballMatchCard({
   const homeTeam = teams.find((team) => team.id === match.homeTeamId);
   const awayTeam = teams.find((team) => team.id === match.awayTeamId);
   const isLive = isLiveFootballMatch(match.status);
+  const refereeControlled = Boolean(match.controllerDeviceId);
   const [scores, setScores] = useState({
     away: match.awayScore,
     home: match.homeScore,
@@ -165,7 +175,7 @@ export function AdminFootballMatchCard({
 
     return () => window.clearInterval(interval);
   }, [
-    match.clockPausedAt,
+    match.stoppageStartedAt,
     match.status,
     match.startedAt,
     match.secondHalfStartedAt,
@@ -230,7 +240,7 @@ export function AdminFootballMatchCard({
             <div className="text-right">
               <p
                 className={`font-mono text-sm font-semibold tabular-nums ${
-                  clock.isPaused || clock.isInAddedTime
+                  clock.isTrackingStoppage || clock.isInAddedTime
                     ? "text-amber-700"
                     : "text-slate-900"
                 }`}
@@ -238,8 +248,8 @@ export function AdminFootballMatchCard({
                 {clock.addedTimePlayedLabel ?? clock.clockLabel}
               </p>
               <p className="text-[0.65rem] font-medium text-slate-500">
-                {clock.isPaused
-                  ? "Clock paused"
+                {clock.isTrackingStoppage
+                  ? "Stoppage being tracked"
                   : clock.isInAddedTime
                     ? `of ${clock.addedTimeNeededLabel} added`
                     : clock.periodLabel}
@@ -256,6 +266,11 @@ export function AdminFootballMatchCard({
       </div>
 
       <div className="px-4 py-5">
+        {refereeControlled ? (
+          <p className="mb-4 border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs font-semibold text-amber-800">
+            Referee mode currently controls this match. Open referee mode to make changes.
+          </p>
+        ) : null}
         <div className={`flex items-start gap-2 sm:gap-3 ${focused ? "py-3 sm:py-6" : ""}`}>
           <TeamScoreControl
             adjustScore={adjustScore}
@@ -263,6 +278,7 @@ export function AdminFootballMatchCard({
             focused={focused}
             match={match}
             pending={scorePending}
+            refereeControlled={refereeControlled}
             score={scores.home}
             side="home"
             team={homeTeam}
@@ -276,6 +292,7 @@ export function AdminFootballMatchCard({
             focused={focused}
             match={match}
             pending={scorePending}
+            refereeControlled={refereeControlled}
             score={scores.away}
             side="away"
             team={awayTeam}
@@ -298,6 +315,7 @@ export function AdminFootballMatchCard({
                 </label>
                 <KickoffInput
                   defaultIso={match.kickoffAt}
+                  disabled={refereeControlled}
                   id={`kickoff-${match.id}`}
                 />
               </div>
@@ -310,6 +328,7 @@ export function AdminFootballMatchCard({
                 </label>
                 <Input
                   defaultValue={match.venue ?? ""}
+                  disabled={refereeControlled}
                   id={`venue-${match.id}`}
                   name="venue"
                   placeholder="Main pitch"
@@ -317,6 +336,7 @@ export function AdminFootballMatchCard({
               </div>
               <PendingSubmitButton
                 className="self-end"
+                disabled={refereeControlled}
                 pendingLabel="Saving..."
                 type="submit"
                 variant="outline"
@@ -330,7 +350,7 @@ export function AdminFootballMatchCard({
               <input name="command" type="hidden" value="start" />
               <PendingSubmitButton
                 className="w-full"
-                disabled={!homeTeam || !awayTeam}
+                disabled={refereeControlled || !homeTeam || !awayTeam}
                 pendingLabel="Starting..."
                 type="submit"
               >
@@ -349,20 +369,27 @@ export function AdminFootballMatchCard({
                 <input
                   name="command"
                   type="hidden"
-                  value={match.clockPausedAt ? "resume_clock" : "pause_clock"}
+                  value={
+                    match.stoppageStartedAt
+                      ? "end_stoppage"
+                      : "start_stoppage"
+                  }
                 />
                 <PendingSubmitButton
                   className="w-full"
+                  disabled={refereeControlled}
                   pendingLabel="Updating clock..."
                   type="submit"
-                  variant={match.clockPausedAt ? "default" : "outline"}
+                  variant={match.stoppageStartedAt ? "default" : "outline"}
                 >
-                  {match.clockPausedAt ? (
-                    <Play className="h-4 w-4" />
-                  ) : (
+                  {match.stoppageStartedAt ? (
                     <Pause className="h-4 w-4" />
+                  ) : (
+                    <Play className="h-4 w-4" />
                   )}
-                  {match.clockPausedAt ? "Resume match clock" : "Pause for stoppage"}
+                  {match.stoppageStartedAt
+                    ? "Stop stoppage tracking"
+                    : "Start stoppage tracking"}
                 </PendingSubmitButton>
               </form>
             ) : null}
@@ -378,6 +405,7 @@ export function AdminFootballMatchCard({
                 />
                 <PendingSubmitButton
                   className="w-full"
+                  disabled={refereeControlled}
                   pendingLabel="Updating..."
                   type="submit"
                   variant="outline"
@@ -398,6 +426,7 @@ export function AdminFootballMatchCard({
               <input name="command" type="hidden" value="finish" />
               <PendingSubmitButton
                 className="w-full"
+                disabled={refereeControlled}
                 pendingLabel="Publishing..."
                 type="submit"
               >
@@ -414,6 +443,7 @@ export function AdminFootballMatchCard({
             <input name="command" type="hidden" value="reopen" />
             <PendingSubmitButton
               className="w-full"
+              disabled={refereeControlled}
               pendingLabel="Reopening..."
               type="submit"
               variant="outline"
@@ -437,6 +467,7 @@ export function AdminFootballMatchCard({
               <Input
                 aria-label="Home score"
                 defaultValue={scores.home}
+                disabled={refereeControlled}
                 min={0}
                 name="home_score"
                 required
@@ -445,12 +476,18 @@ export function AdminFootballMatchCard({
               <Input
                 aria-label="Away score"
                 defaultValue={scores.away}
+                disabled={refereeControlled}
                 min={0}
                 name="away_score"
                 required
                 type="number"
               />
-              <Button size="icon" type="submit" variant="outline">
+              <Button
+                disabled={refereeControlled}
+                size="icon"
+                type="submit"
+                variant="outline"
+              >
                 <Save className="h-4 w-4" />
               </Button>
             </form>
@@ -464,11 +501,11 @@ export function AdminFootballMatchCard({
           </p>
         ) : null}
 
-        {isLive && !focused ? (
+        {!focused && ["scheduled", "live", "halftime"].includes(match.status) ? (
           <Button asChild className="mt-4 w-full" variant="secondary">
             <Link href={`/admin/events/${eventId}/football/matches/${match.id}`}>
-              <Focus className="h-4 w-4" />
-              Focus on this match
+              <Timer className="h-4 w-4" />
+              Open referee mode
             </Link>
           </Button>
         ) : null}

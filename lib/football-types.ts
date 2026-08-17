@@ -41,9 +41,12 @@ export type FootballMatch = {
   nextMatchSlot: "home" | "away" | null;
   startedAt: string | null;
   secondHalfStartedAt: string | null;
-  clockPausedAt: string | null;
+  stoppageStartedAt: string | null;
   firstHalfStoppageSeconds: number;
   secondHalfStoppageSeconds: number;
+  controlVersion: number;
+  controllerDeviceId: string | null;
+  controllerClaimedAt: string | null;
   endedAt: string | null;
   updatedAt: string;
 };
