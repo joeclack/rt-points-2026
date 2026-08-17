@@ -25,6 +25,8 @@ export async function submitTeamJoinRequest(formData: FormData) {
   const eventSlug = String(formData.get("event_slug") ?? "").trim();
   const teamName = String(formData.get("team_name") ?? "").trim();
   const teamColour = String(formData.get("team_colour") ?? "").trim();
+  const postedSubmissionId = String(formData.get("submission_id") ?? "").trim();
+  const submissionId = postedSubmissionId || crypto.randomUUID();
   const requestedTeamSize = Number(formData.get("team_size"));
   const teamSize =
     Number.isInteger(requestedTeamSize) &&
@@ -38,6 +40,10 @@ export async function submitTeamJoinRequest(formData: FormData) {
 
   if (!eventSlug) {
     redirect("/");
+  }
+
+  if (submissionId.length > 100) {
+    fail(eventSlug, "Please refresh the page and try again");
   }
 
   if (teamName.length < 2 || teamName.length > 60) {
@@ -78,6 +84,7 @@ export async function submitTeamJoinRequest(formData: FormData) {
     submitted_team_name: teamName,
     submitted_team_colour: teamColour,
     submitted_player_names: playerNames,
+    submitted_submission_id: submissionId,
   });
 
   if (error) {

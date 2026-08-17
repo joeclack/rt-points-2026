@@ -2,7 +2,7 @@
 
 import { Flag, Focus, Play, RotateCcw } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 
 import {
   adjustBasketballScore,
@@ -34,6 +34,12 @@ function Hidden({
       <input name="event_id" type="hidden" value={eventId} />
       <input name="tournament_id" type="hidden" value={match.tournamentId} />
       <input name="match_id" type="hidden" value={match.id} />
+      <input name="command_id" type="hidden" />
+      <input
+        name="expected_version"
+        type="hidden"
+        value={match.controlVersion}
+      />
       {focused ? <input name="focused" type="hidden" value="true" /> : null}
     </>
   );
@@ -65,6 +71,7 @@ export function AdminBasketballMatchCard({
   async function adjustScore(formData: FormData) {
     if (scorePending) return;
 
+    formData.set("command_id", crypto.randomUUID());
     const side = String(formData.get("side")) as "home" | "away";
     const points = Number(formData.get("points"));
     const previousScores = scores;
@@ -82,6 +89,13 @@ export function AdminBasketballMatchCard({
       throw error;
     } finally {
       setScorePending(false);
+    }
+  }
+
+  function prepareCommand(event: FormEvent<HTMLFormElement>) {
+    const input = event.currentTarget.elements.namedItem("command_id");
+    if (input instanceof HTMLInputElement) {
+      input.value = crypto.randomUUID();
     }
   }
 
@@ -157,6 +171,7 @@ export function AdminBasketballMatchCard({
             <form
               action={updateBasketballSchedule}
               className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]"
+              onSubmit={prepareCommand}
             >
               <Hidden eventId={eventId} focused={focused} match={match} />
               <KickoffInput
@@ -176,7 +191,7 @@ export function AdminBasketballMatchCard({
                 Save
               </PendingSubmitButton>
             </form>
-            <form action={updateBasketballLifecycle}>
+            <form action={updateBasketballLifecycle} onSubmit={prepareCommand}>
               <Hidden eventId={eventId} focused={focused} match={match} />
               <input name="command" type="hidden" value="start" />
               <PendingSubmitButton
@@ -193,7 +208,7 @@ export function AdminBasketballMatchCard({
         ) : null}
 
         {match.status === "live" ? (
-          <form action={updateBasketballLifecycle}>
+          <form action={updateBasketballLifecycle} onSubmit={prepareCommand}>
             <Hidden eventId={eventId} focused={focused} match={match} />
             <input name="command" type="hidden" value="finish" />
             <PendingSubmitButton
@@ -208,7 +223,7 @@ export function AdminBasketballMatchCard({
         ) : null}
 
         {match.status === "full_time" ? (
-          <form action={updateBasketballLifecycle}>
+          <form action={updateBasketballLifecycle} onSubmit={prepareCommand}>
             <Hidden eventId={eventId} focused={focused} match={match} />
             <input name="command" type="hidden" value="reopen" />
             <PendingSubmitButton

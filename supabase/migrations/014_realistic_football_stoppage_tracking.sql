@@ -1,8 +1,41 @@
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'football_matches'
+      and column_name = 'clock_paused_at'
+  ) and not exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'football_matches'
+      and column_name = 'stoppage_started_at'
+  ) then
+    alter table public.football_matches
+    rename column clock_paused_at to stoppage_started_at;
+  elsif not exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'football_matches'
+      and column_name = 'stoppage_started_at'
+  ) then
+    alter table public.football_matches
+    add column stoppage_started_at timestamptz;
+  end if;
+end
+$$;
+
 alter table public.football_matches
-rename column clock_paused_at to stoppage_started_at;
+add column if not exists first_half_stoppage_seconds integer not null default 0
+  check (first_half_stoppage_seconds >= 0),
+add column if not exists second_half_stoppage_seconds integer not null default 0
+  check (second_half_stoppage_seconds >= 0);
 
 alter table public.football_match_events
-drop constraint football_match_events_event_type_check;
+drop constraint if exists football_match_events_event_type_check;
 
 alter table public.football_match_events
 add constraint football_match_events_event_type_check check (

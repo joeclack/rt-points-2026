@@ -34,6 +34,7 @@ export type BasketballMatch = {
   nextMatchSlot: "home" | "away" | null;
   startedAt: string | null;
   endedAt: string | null;
+  controlVersion: number;
   updatedAt: string;
 };
 

@@ -204,33 +204,19 @@ export async function archiveEvent(formData: FormData) {
     redirect("/admin/events?error=Missing%20tournament");
   }
 
-  const { supabase, user } = await requireUser();
-  const { data: event, error: eventError } = await supabase
-    .from("events")
-    .select("name,owner_id,slug,sport")
-    .eq("id", eventId)
-    .single();
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase.rpc("set_event_archived", {
+    p_archived: true,
+    p_event_id: eventId,
+  });
 
-  if (eventError || !event) {
-    redirect(eventAdminSectionPath(eventId, "settings", { error: "Tournament not found" }));
+  if (error || !data) {
+    redirect(eventAdminSectionPath(eventId, "settings", {
+      error: error?.message ?? "Unable to archive tournament",
+    }));
   }
 
-  if (event.owner_id !== user.id) {
-    redirect(
-      eventAdminSectionPath(eventId, "settings", {
-        error: "Only the tournament owner can archive it",
-      }),
-    );
-  }
-
-  const { error } = await supabase
-    .from("events")
-    .update({ status: "finished" })
-    .eq("id", eventId);
-
-  if (error) {
-    redirect(eventAdminSectionPath(eventId, "settings", { error: error.message }));
-  }
+  const event = data as { slug: string; sport: "football" | "basketball" };
 
   revalidatePath("/");
   revalidatePath("/admin/events");
@@ -246,29 +232,17 @@ export async function restoreEvent(formData: FormData) {
     redirect("/admin/events?error=Missing%20tournament");
   }
 
-  const { supabase, user } = await requireUser();
-  const { data: event, error: eventError } = await supabase
-    .from("events")
-    .select("owner_id,slug,sport")
-    .eq("id", eventId)
-    .single();
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase.rpc("set_event_archived", {
+    p_archived: false,
+    p_event_id: eventId,
+  });
 
-  if (eventError || !event) {
-    redirect("/admin/events?error=Tournament%20not%20found");
+  if (error || !data) {
+    redirect(`/admin/events?error=${encodeURIComponent(error?.message ?? "Unable to restore tournament")}`);
   }
 
-  if (event.owner_id !== user.id) {
-    redirect("/admin/events?error=Only%20the%20tournament%20owner%20can%20restore%20it");
-  }
-
-  const { error } = await supabase
-    .from("events")
-    .update({ status: "draft" })
-    .eq("id", eventId);
-
-  if (error) {
-    redirect(`/admin/events?error=${encodeURIComponent(error.message)}`);
-  }
+  const event = data as { slug: string; sport: "football" | "basketball" };
 
   revalidatePath("/");
   revalidatePath("/admin/events");

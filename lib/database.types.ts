@@ -208,6 +208,7 @@ export type Database = {
           created_team_id: string | null;
           reviewed_by: string | null;
           reviewed_at: string | null;
+          submission_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -219,6 +220,7 @@ export type Database = {
           created_team_id?: string | null;
           reviewed_by?: string | null;
           reviewed_at?: string | null;
+          submission_id?: string | null;
           created_at?: string;
         };
         Update: {
@@ -230,6 +232,7 @@ export type Database = {
           created_team_id?: string | null;
           reviewed_by?: string | null;
           reviewed_at?: string | null;
+          submission_id?: string | null;
           created_at?: string;
         };
         Relationships: [
@@ -657,9 +660,9 @@ export type Database = {
         ];
       };
       basketball_matches: {
-        Row: { id: string; tournament_id: string; event_id: string; home_team_id: string | null; away_team_id: string | null; stage: "league" | "quarter_final" | "semi_final" | "third_place" | "final" | "friendly"; round_number: number; position: number; tipoff_at: string | null; court: string | null; status: "scheduled" | "live" | "full_time" | "postponed" | "cancelled"; home_score: number; away_score: number; winner_team_id: string | null; next_match_id: string | null; next_match_slot: "home" | "away" | null; started_at: string | null; ended_at: string | null; created_at: string; updated_at: string };
-        Insert: { id?: string; tournament_id: string; event_id: string; home_team_id?: string | null; away_team_id?: string | null; stage: "league" | "quarter_final" | "semi_final" | "third_place" | "final" | "friendly"; round_number?: number; position?: number; tipoff_at?: string | null; court?: string | null; status?: "scheduled" | "live" | "full_time" | "postponed" | "cancelled"; home_score?: number; away_score?: number; winner_team_id?: string | null; next_match_id?: string | null; next_match_slot?: "home" | "away" | null; started_at?: string | null; ended_at?: string | null; created_at?: string; updated_at?: string };
-        Update: { id?: string; tournament_id?: string; event_id?: string; home_team_id?: string | null; away_team_id?: string | null; stage?: "league" | "quarter_final" | "semi_final" | "third_place" | "final" | "friendly"; round_number?: number; position?: number; tipoff_at?: string | null; court?: string | null; status?: "scheduled" | "live" | "full_time" | "postponed" | "cancelled"; home_score?: number; away_score?: number; winner_team_id?: string | null; next_match_id?: string | null; next_match_slot?: "home" | "away" | null; started_at?: string | null; ended_at?: string | null; created_at?: string; updated_at?: string };
+        Row: { id: string; tournament_id: string; event_id: string; home_team_id: string | null; away_team_id: string | null; stage: "league" | "quarter_final" | "semi_final" | "third_place" | "final" | "friendly"; round_number: number; position: number; tipoff_at: string | null; court: string | null; status: "scheduled" | "live" | "full_time" | "postponed" | "cancelled"; home_score: number; away_score: number; winner_team_id: string | null; next_match_id: string | null; next_match_slot: "home" | "away" | null; started_at: string | null; ended_at: string | null; control_version: number; created_at: string; updated_at: string };
+        Insert: { id?: string; tournament_id: string; event_id: string; home_team_id?: string | null; away_team_id?: string | null; stage: "league" | "quarter_final" | "semi_final" | "third_place" | "final" | "friendly"; round_number?: number; position?: number; tipoff_at?: string | null; court?: string | null; status?: "scheduled" | "live" | "full_time" | "postponed" | "cancelled"; home_score?: number; away_score?: number; winner_team_id?: string | null; next_match_id?: string | null; next_match_slot?: "home" | "away" | null; started_at?: string | null; ended_at?: string | null; control_version?: number; created_at?: string; updated_at?: string };
+        Update: { id?: string; tournament_id?: string; event_id?: string; home_team_id?: string | null; away_team_id?: string | null; stage?: "league" | "quarter_final" | "semi_final" | "third_place" | "final" | "friendly"; round_number?: number; position?: number; tipoff_at?: string | null; court?: string | null; status?: "scheduled" | "live" | "full_time" | "postponed" | "cancelled"; home_score?: number; away_score?: number; winner_team_id?: string | null; next_match_id?: string | null; next_match_slot?: "home" | "away" | null; started_at?: string | null; ended_at?: string | null; control_version?: number; created_at?: string; updated_at?: string };
         Relationships: [
           { foreignKeyName: "basketball_matches_tournament_id_fkey"; columns: ["tournament_id"]; isOneToOne: false; referencedRelation: "basketball_tournaments"; referencedColumns: ["id"] },
           { foreignKeyName: "basketball_matches_event_id_fkey"; columns: ["event_id"]; isOneToOne: false; referencedRelation: "events"; referencedColumns: ["id"] },
@@ -705,6 +708,48 @@ export type Database = {
         };
         Returns: Json;
       };
+      apply_basketball_match_command: {
+        Args: {
+          p_match_id: string;
+          p_command: string;
+          p_command_id: string;
+          p_expected_version?: number | null;
+          p_payload?: Json;
+        };
+        Returns: Json;
+      };
+      create_basketball_tournament_atomic: {
+        Args: {
+          p_tournament_id: string;
+          p_event_id: string;
+          p_name: string;
+          p_format: "league" | "knockout";
+          p_start_stage: "quarter_final" | "semi_final" | "final" | null;
+          p_game_minutes: number;
+          p_team_ids: string[];
+          p_fixtures: Json;
+        };
+        Returns: string;
+      };
+      create_football_tournament_atomic: {
+        Args: {
+          p_tournament_id: string;
+          p_event_id: string;
+          p_name: string;
+          p_format: "league" | "knockout";
+          p_start_stage: "quarter_final" | "semi_final" | "final" | null;
+          p_team_ids: string[];
+          p_fixtures: Json;
+        };
+        Returns: string;
+      };
+      set_event_archived: {
+        Args: {
+          p_event_id: string;
+          p_archived: boolean;
+        };
+        Returns: Json;
+      };
       get_event_admin_members: {
         Args: {
           target_event_id: string;
@@ -741,6 +786,7 @@ export type Database = {
           submitted_team_name: string;
           submitted_team_colour: string;
           submitted_player_names: string[];
+          submitted_submission_id: string;
         };
         Returns: string;
       };

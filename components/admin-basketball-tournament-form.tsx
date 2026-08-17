@@ -1,12 +1,24 @@
+"use client";
+
+import type { FormEvent } from "react";
+
 import { createBasketballTournament } from "@/app/admin/events/[eventId]/basketball/actions";
 import { PendingSubmitButton } from "@/components/pending-submit-button";
 import { Input } from "@/components/ui/input";
 import type { Team } from "@/lib/sample-data";
 
 export function AdminBasketballTournamentForm({ eventId, teams }: { eventId: string; teams: Team[] }) {
+  function prepareCreation(event: FormEvent<HTMLFormElement>) {
+    const input = event.currentTarget.elements.namedItem("creation_id");
+    if (input instanceof HTMLInputElement && !input.value) {
+      input.value = crypto.randomUUID();
+    }
+  }
+
   return (
-    <form action={createBasketballTournament} className="space-y-5">
+    <form action={createBasketballTournament} className="space-y-5" onSubmit={prepareCreation}>
       <input name="event_id" type="hidden" value={eventId} />
+      <input name="creation_id" type="hidden" />
       <label className="block space-y-1.5"><span className="text-sm font-medium">Tournament name</span><Input name="name" required /></label>
       <div className="grid gap-4 sm:grid-cols-3">
         <label className="space-y-1.5"><span className="text-sm font-medium">Format</span><select className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm" name="format"><option value="league">Round robin</option><option value="knockout">Knockout</option></select></label>

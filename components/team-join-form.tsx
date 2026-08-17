@@ -1,4 +1,7 @@
+"use client";
+
 import { Send, UsersRound } from "lucide-react";
+import type { FormEvent } from "react";
 
 import { submitTeamJoinRequest } from "@/app/events/[eventSlug]/join/actions";
 import { PendingSubmitButton } from "@/components/pending-submit-button";
@@ -24,6 +27,13 @@ export function TeamJoinForm({
     name: `player_${index + 1}`,
   }));
 
+  function prepareSubmission(event: FormEvent<HTMLFormElement>) {
+    const input = event.currentTarget.elements.namedItem("submission_id");
+    if (input instanceof HTMLInputElement && !input.value) {
+      input.value = crypto.randomUUID();
+    }
+  }
+
   return (
     <Card id="join">
       <CardHeader>
@@ -33,9 +43,14 @@ export function TeamJoinForm({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form action={submitTeamJoinRequest} className="space-y-5">
+        <form
+          action={submitTeamJoinRequest}
+          className="space-y-5"
+          onSubmit={prepareSubmission}
+        >
           <input name="event_slug" type="hidden" value={eventSlug} />
           <input name="team_size" type="hidden" value={teamSize} />
+          <input name="submission_id" type="hidden" />
 
           <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_7rem]">
             <label className="space-y-1.5">

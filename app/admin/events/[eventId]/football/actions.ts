@@ -12,6 +12,7 @@ import type {
   FootballMatchStage,
   FootballTournamentFormat,
 } from "@/lib/football-types";
+import type { Json } from "@/lib/database.types";
 import { createClient } from "@/lib/supabase/server";
 
 function getText(formData: FormData, name: string) {
@@ -159,7 +160,7 @@ export async function createFootballTournament(formData: FormData) {
     );
   }
 
-  const { supabase, userId } = await requireEventAdmin(eventId);
+  const { supabase } = await requireEventAdmin(eventId);
   const { data: validTeams, error: teamError } = await supabase
     .from("teams")
     .select("id")
@@ -170,39 +171,7 @@ export async function createFootballTournament(formData: FormData) {
     fail(eventId, null, teamError?.message ?? "One or more teams are invalid");
   }
 
-  const tournamentId = crypto.randomUUID();
-  const { error: tournamentError } = await supabase
-    .from("football_tournaments")
-    .insert({
-      id: tournamentId,
-      event_id: eventId,
-      name,
-      format,
-      start_stage: format === "knockout" ? startStage : null,
-      created_by: userId,
-    });
-
-  if (tournamentError) {
-    fail(eventId, null, tournamentError.message);
-  }
-
-  const { error: membershipError } = await supabase
-    .from("football_tournament_teams")
-    .insert(
-      teamIds.map((teamId, index) => ({
-        tournament_id: tournamentId,
-        team_id: teamId,
-        seed: index + 1,
-      })),
-    );
-
-  if (membershipError) {
-    await supabase
-      .from("football_tournaments")
-      .delete()
-      .eq("id", tournamentId);
-    fail(eventId, null, membershipError.message);
-  }
+  const tournamentId = getText(formData, "creation_id") || crypto.randomUUID();
 
   const fixtures =
     format === "league"
@@ -213,16 +182,18 @@ export async function createFootballTournament(formData: FormData) {
           teamIds,
           startStage,
         );
-  const { error: fixtureError } = await supabase
-    .from("football_matches")
-    .insert(fixtures);
+  const { error } = await supabase.rpc("create_football_tournament_atomic", {
+    p_event_id: eventId,
+    p_fixtures: fixtures as unknown as Json,
+    p_format: format,
+    p_name: name,
+    p_start_stage: format === "knockout" ? startStage : null,
+    p_team_ids: teamIds,
+    p_tournament_id: tournamentId,
+  });
 
-  if (fixtureError) {
-    await supabase
-      .from("football_tournaments")
-      .delete()
-      .eq("id", tournamentId);
-    fail(eventId, null, fixtureError.message);
+  if (error) {
+    fail(eventId, null, error.message);
   }
 
   await revalidateFootballPages(eventId);

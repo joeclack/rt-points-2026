@@ -90,6 +90,7 @@ function mapPayload(payload: PublicBasketballPayload) {
         nextMatchSlot: match.next_match_slot,
         startedAt: match.started_at,
         endedAt: match.ended_at,
+        controlVersion: 0,
         updatedAt: match.updated_at,
       })),
     }),

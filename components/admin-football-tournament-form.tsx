@@ -1,7 +1,7 @@
 "use client";
 
 import { Brackets, Check, ListOrdered } from "lucide-react";
-import { useState } from "react";
+import { type FormEvent, useState } from "react";
 
 import { createFootballTournament } from "@/app/admin/events/[eventId]/football/actions";
 import { PendingSubmitButton } from "@/components/pending-submit-button";
@@ -28,9 +28,21 @@ export function AdminFootballTournamentForm({
         : "final",
   );
 
+  function prepareCreation(event: FormEvent<HTMLFormElement>) {
+    const input = event.currentTarget.elements.namedItem("creation_id");
+    if (input instanceof HTMLInputElement && !input.value) {
+      input.value = crypto.randomUUID();
+    }
+  }
+
   return (
-    <form action={createFootballTournament} className="space-y-6">
+    <form
+      action={createFootballTournament}
+      className="space-y-6"
+      onSubmit={prepareCreation}
+    >
       <input name="event_id" type="hidden" value={eventId} />
+      <input name="creation_id" type="hidden" />
       <div className="space-y-2">
         <label className="text-sm font-semibold text-slate-800" htmlFor="name">
           Tournament name
