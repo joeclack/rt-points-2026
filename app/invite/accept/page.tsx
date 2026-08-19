@@ -97,7 +97,7 @@ export default function AcceptInvitePage() {
     }
 
     try {
-      const response = await fetch("/invite/accept", {
+      const response = await fetch("/api/invite/accept-password", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${session.access_token}`,
