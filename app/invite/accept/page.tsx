@@ -82,17 +82,46 @@ export default function AcceptInvitePage() {
 
     setSaving(true);
     setError(undefined);
-    const { error: updateError } = await supabase.auth.updateUser({ password });
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
 
-    if (updateError) {
-      setError(updateError.message);
+    if (sessionError || !session) {
+      setError(
+        sessionError?.message ??
+          "Your invitation session has expired. Open a fresh invite link and try again.",
+      );
       setSaving(false);
       return;
     }
 
-    window.history.replaceState({}, document.title, window.location.pathname);
-    router.replace("/admin/events");
-    router.refresh();
+    try {
+      const response = await fetch("/api/invite/accept-password", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ password }),
+      });
+      const result = (await response.json().catch(() => ({}))) as {
+        error?: string;
+      };
+
+      if (!response.ok) {
+        setError(result.error ?? "The password could not be saved. Try again.");
+        setSaving(false);
+        return;
+      }
+
+      window.history.replaceState({}, document.title, window.location.pathname);
+      router.replace("/admin/events");
+      router.refresh();
+    } catch {
+      setError("The password could not be saved. Check your connection and try again.");
+      setSaving(false);
+    }
   }
 
   return (
