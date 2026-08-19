@@ -10,7 +10,7 @@ export async function login(formData: FormData) {
   const next = String(formData.get("next") ?? "/admin/events");
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
@@ -19,37 +19,18 @@ export async function login(formData: FormData) {
     redirect(`/login?error=${encodeURIComponent(error.message)}`);
   }
 
-  redirect(next.startsWith("/") ? next : "/admin/events");
-}
+  const { data: appAdmin, error: accessError } = await supabase
+    .from("app_admins")
+    .select("user_id")
+    .eq("user_id", data.user.id)
+    .maybeSingle();
 
-export async function signup(formData: FormData) {
-  const displayName = String(formData.get("display_name") ?? "");
-  const email = String(formData.get("email") ?? "");
-  const password = String(formData.get("password") ?? "");
-
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        display_name: displayName,
-      },
-    },
-  });
-
-  if (error) {
-    redirect(`/signup?error=${encodeURIComponent(error.message)}`);
+  if (accessError || !appAdmin) {
+    await supabase.auth.signOut();
+    redirect("/login?error=This%20account%20has%20not%20been%20invited%20as%20an%20admin");
   }
 
-  await supabase.auth.signOut();
-
-  const searchParams = new URLSearchParams({
-    message: "Check your email to confirm your account, then log in.",
-    email,
-  });
-
-  redirect(`/login?${searchParams.toString()}`);
+  redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/admin/events");
 }
 
 export async function logout() {

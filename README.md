@@ -4,13 +4,14 @@ A real-time football tournament and match management app for live events.
 
 ## Product Goal
 
-Organisers can create an account, create a football tournament, review team applications, manage teams, generate competitions, run live matches, correct scores and publish a clean public match centre for spectators.
+Invited organisers can create a football or basketball tournament, review team applications, manage teams, generate competitions, run live matches, correct scores and publish a clean public match centre for spectators.
 
 Players can search for a public tournament and submit a five-player team for admin approval without creating an account. Spectators can view live fixtures, scores, results, standings and knockout brackets.
 
 ## Core Features
 
 - Supabase Auth for event admins.
+- Owner-controlled email invitations and app-level admin access.
 - Event ownership and shared admin access.
 - Optional viewer access codes for public pages.
 - Football teams with names, colours and badges.
@@ -33,7 +34,8 @@ Players can search for a public tournament and submit a five-player team for adm
 
 - `/` - public football event search
 - `/login` - admin login
-- `/signup` - admin signup
+- `/invite/accept` - invited admin account setup
+- `/admin/admins` - owner-only admin invitations
 - `/admin/events` - admin event list
 - `/admin/events/new` - create event
 - `/admin/events/[eventId]` - event admin dashboard

@@ -1,8 +1,5 @@
-import Link from "next/link";
-
 import { login } from "@/app/auth/actions";
 import { PendingSubmitButton } from "@/components/pending-submit-button";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -58,9 +55,9 @@ export default async function LoginPage({
               Log in
             </PendingSubmitButton>
           </form>
-          <Button asChild className="mt-3 w-full" type="button" variant="outline">
-            <Link href="/signup">Create account</Link>
-          </Button>
+          <p className="text-center text-sm text-slate-500">
+            Admin accounts are invitation only.
+          </p>
         </CardContent>
       </Card>
     </main>

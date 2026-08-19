@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      app_admins: {
+        Row: {
+          user_id: string;
+          role: "owner" | "admin";
+          invited_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          role?: "owner" | "admin";
+          invited_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          role?: "owner" | "admin";
+          invited_by?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "app_admins_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "app_admins_invited_by_fkey";
+            columns: ["invited_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           id: string;
@@ -671,6 +707,24 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      get_app_admin_members: {
+        Args: Record<PropertyKey, never>;
+        Returns: Array<{
+          user_id: string;
+          display_name: string;
+          email: string;
+          role: "owner" | "admin";
+          created_at: string;
+        }>;
+      };
+      is_app_admin: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
+      is_app_owner: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
       event_requires_viewer_access: {
         Args: {
           event_slug: string;

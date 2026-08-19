@@ -74,7 +74,7 @@ export default async function AdminEventsPage({
   return (
     <main className="min-h-screen bg-brand-cream">
       <section className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6 md:py-8">
-        <AdminEventNav />
+        <AdminEventNav appRole={user?.role} />
 
         <header className="mb-7">
           <h1 className="text-4xl uppercase leading-none text-brand-charcoal">

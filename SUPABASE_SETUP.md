@@ -9,6 +9,8 @@ Set these locally in `.env.local` and in Vercel:
 ```text
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SECRET_KEY=
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
 Use the base project URL, for example `https://project-ref.supabase.co`.
@@ -16,6 +18,14 @@ Do not include `/rest/v1`.
 
 `NEXT_PUBLIC_SUPABASE_ANON_KEY` is still accepted as a temporary fallback for
 older projects, but new setup should use the publishable key.
+
+`SUPABASE_SECRET_KEY` must only be configured in trusted server environments.
+Never prefix it with `NEXT_PUBLIC_` or expose it to the browser. The legacy
+`SUPABASE_SERVICE_ROLE_KEY` is accepted as a fallback, but new projects should
+use a current `sb_secret_...` key.
+
+Set `NEXT_PUBLIC_SITE_URL` to the deployed app origin in Vercel. The app uses it
+to send invitees back to `/invite/accept`.
 
 ## Database
 
@@ -31,6 +41,15 @@ supabase/migrations/007_team_join_requests.sql
 supabase/migrations/008_configurable_team_size.sql
 supabase/migrations/009_basketball_tournaments.sql
 supabase/migrations/010_team_request_realtime.sql
+supabase/migrations/011_football_match_clock.sql
+supabase/migrations/012_archive_tournaments.sql
+supabase/migrations/013_football_stoppage_clock.sql
+supabase/migrations/014_realistic_football_stoppage_tracking.sql
+supabase/migrations/015_resilient_football_match_commands.sql
+supabase/migrations/016_resilient_team_and_event_commands.sql
+supabase/migrations/017_resilient_basketball_commands.sql
+supabase/migrations/018_atomic_football_tournament_creation.sql
+supabase/migrations/019_invite_only_app_admins.sql
 ```
 
 Migration `006` is intentionally destructive when upgrading an existing
@@ -42,6 +61,7 @@ kept.
 The schema creates:
 
 - Supabase Auth-backed profiles
+- Invite-only app administrators
 - Events
 - Event admins
 - Football teams
@@ -60,15 +80,35 @@ access-code-aware public reads, RLS and Realtime publication.
 The seventh adds public team applications, five-player rosters, profanity
 validation and atomic admin acceptance or rejection.
 
-## Confirmation Email
+Migration `019` adds app-level admin membership, makes tournament creation
+invite-only, and seeds `joebclack@gmail.com` as the app owner. If that email
+already exists in Supabase Auth, it is promoted when the migration runs. If it
+does not exist yet, invite it once from **Authentication > Users > Add user >
+Send invitation** after applying the migration; the Auth trigger will seed it
+as owner automatically.
 
-In the Supabase Dashboard, open **Authentication > Email Templates > Confirm signup**.
+## Invite-only Auth
 
-- Subject: `Confirm your email address`
-- Body: use `supabase/templates/confirm-signup.html`
+In the Supabase Dashboard:
 
-The template uses Supabase's `{{ .ConfirmationURL }}` variable for the confirmation
-button. Keep that placeholder unchanged when pasting the HTML into the dashboard.
+1. Open **Authentication > Providers > Email** and turn off **Allow new users
+   to sign up**. Admin API invitations still work when public signup is off.
+2. Open **Authentication > URL Configuration**. Set the production Site URL and
+   add `http://localhost:3000/invite/accept` plus the production
+   `/invite/accept` URL to the redirect allow list.
+3. Open **Authentication > Email Templates > Invite user**.
+   - Subject: `You have been invited to TJG Tournaments`
+   - Body: use `supabase/templates/invite.html`
+4. Add `SUPABASE_SECRET_KEY` and `NEXT_PUBLIC_SITE_URL` locally and in Vercel.
+
+Only the seeded app owner can open `/admin/admins` and send invitations. The
+secret key is used exclusively in the server action. Invited admins can create
+their own tournaments; an event owner must still grant them access to an
+existing tournament.
+
+Keep the template's `{{ .RedirectTo }}` and `{{ .TokenHash }}` placeholders
+unchanged. They let the app verify the invitation into its cookie-based Supabase
+session before the invitee sets a password.
 
 ## Password Recovery Email
 
@@ -82,8 +122,9 @@ when pasting the HTML into the dashboard.
 
 ## Auth Flow
 
-- Admins sign up or log in with Supabase Auth.
-- Logged-in admins can create tournaments.
+- The app owner invites admins by email.
+- Invitees accept the email link, choose a password and then use Supabase Auth.
+- Only app admins can enter the admin area or create tournaments.
 - Public viewers can search visible tournaments and submit a team without an account.
 - Event admins can create tournaments and run football matches.
 - Future officials can use the same Auth foundation with event or match assignment.
