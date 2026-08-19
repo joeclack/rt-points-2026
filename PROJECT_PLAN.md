@@ -9,6 +9,7 @@ This project is now football-only. The app should stay focused on live football 
 - Profanity checks for team and player names.
 - Admin team-request approval and rejection.
 - Supabase Auth for admins.
+- Owner-controlled admin invitations.
 - Event creation and event-admin collaboration.
 - Optional viewer access codes.
 - Football team management.
@@ -34,7 +35,8 @@ This project is now football-only. The app should stay focused on live football 
 
 - `/` - public event search
 - `/login` - admin login
-- `/signup` - admin signup
+- `/invite/accept` - invited admin account setup
+- `/admin/admins` - owner-only admin invitations
 - `/admin/events` - admin event list
 - `/admin/events/new` - create event
 - `/admin/events/[eventId]` - event dashboard, admins and viewer access
@@ -45,6 +47,7 @@ This project is now football-only. The app should stay focused on live football 
 ## Data Model
 
 - `profiles`
+- `app_admins`
 - `events`
 - `event_admins`
 - `event_viewer_access_codes`
@@ -60,6 +63,7 @@ This project is now football-only. The app should stay focused on live football 
 
 - Event-first admin/public structure.
 - Supabase Auth.
+- Invite-only app administration with a seeded owner.
 - Event-admin ownership and collaborator model.
 - Public access-code gating.
 - Football team management.
