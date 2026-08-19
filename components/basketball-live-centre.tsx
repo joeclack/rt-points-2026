@@ -316,7 +316,7 @@ export function BasketballLiveCentre({
   }, [accessCode, eventId, eventSlug]);
 
   return (
-    <main className="min-h-screen bg-slate-100">
+    <main className="min-h-screen bg-brand-cream">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 py-4">
           <div className="flex min-w-0 items-center gap-3">

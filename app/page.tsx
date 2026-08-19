@@ -7,10 +7,13 @@ export default async function HomePage() {
   const events = await searchPublicEvents();
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-brand-cream">
       <section className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
         <header className="mb-6 border-b border-slate-200 pb-5">
-          <h1 className="text-2xl font-semibold text-slate-950 sm:text-3xl">
+          <p className="font-brand text-lg uppercase leading-none text-brand-orange">
+            TJG
+          </p>
+          <h1 className="mt-1 text-4xl uppercase leading-none text-brand-charcoal sm:text-5xl">
             Tournaments
           </h1>
         </header>

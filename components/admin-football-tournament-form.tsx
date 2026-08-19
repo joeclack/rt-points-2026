@@ -64,7 +64,7 @@ export function AdminFootballTournamentForm({
             className={cn(
               "cursor-pointer rounded-lg border-2 p-4 transition",
               format === "league"
-                ? "border-cyan-600 bg-cyan-50"
+                ? "border-brand-orange bg-brand-orange/10"
                 : "border-slate-200 bg-white hover:border-slate-300",
             )}
           >
@@ -76,7 +76,7 @@ export function AdminFootballTournamentForm({
               type="radio"
               value="league"
             />
-            <ListOrdered className="h-5 w-5 text-cyan-700" />
+            <ListOrdered className="h-5 w-5 text-brand-orange-dark" />
             <span className="mt-3 block font-semibold text-slate-950">
               League table
             </span>
@@ -88,7 +88,7 @@ export function AdminFootballTournamentForm({
             className={cn(
               "cursor-pointer rounded-lg border-2 p-4 transition",
               format === "knockout"
-                ? "border-cyan-600 bg-cyan-50"
+                ? "border-brand-orange bg-brand-orange/10"
                 : "border-slate-200 bg-white hover:border-slate-300",
             )}
           >
@@ -100,7 +100,7 @@ export function AdminFootballTournamentForm({
               type="radio"
               value="knockout"
             />
-            <Brackets className="h-5 w-5 text-cyan-700" />
+            <Brackets className="h-5 w-5 text-brand-orange-dark" />
             <span className="mt-3 block font-semibold text-slate-950">
               Knockout cup
             </span>
@@ -156,7 +156,7 @@ export function AdminFootballTournamentForm({
         <div className="grid gap-2 sm:grid-cols-2">
           {teams.map((team) => (
             <label
-              className="group flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 hover:border-cyan-300"
+              className="group flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 hover:border-brand-orange/60"
               key={team.id}
             >
               <input
@@ -166,7 +166,7 @@ export function AdminFootballTournamentForm({
                 type="checkbox"
                 value={team.id}
               />
-              <span className="flex h-5 w-5 items-center justify-center rounded border border-slate-300 text-transparent peer-checked:border-cyan-600 peer-checked:bg-cyan-600 peer-checked:text-white">
+              <span className="flex h-5 w-5 items-center justify-center rounded border border-slate-300 text-transparent peer-checked:border-brand-orange peer-checked:bg-brand-orange peer-checked:text-brand-charcoal">
                 <Check className="h-3.5 w-3.5" />
               </span>
               <TeamBadge

@@ -10,6 +10,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        brand: {
+          orange: "#f16330",
+          "orange-dark": "#ad3917",
+          charcoal: "#2b2625",
+          cream: "#fff8f4",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

@@ -116,11 +116,13 @@ export function PwaInstallGuide() {
     <Dialog onOpenChange={setOpen} open={open}>
       <DialogContent className="max-w-md p-0">
         <div className="border-b border-slate-200 px-5 pb-5 pt-6 pr-12 sm:px-6 sm:pb-6 sm:pt-7">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-950 text-cyan-300">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-charcoal text-brand-orange">
             <Smartphone className="h-6 w-6" />
           </div>
           <DialogHeader className="mb-0">
-            <DialogTitle>Get TJG Tournaments on your phone</DialogTitle>
+            <DialogTitle className="font-brand text-2xl uppercase tracking-wide">
+              Get TJG Tournaments on your phone
+            </DialogTitle>
             <DialogDescription>
               Add it to your Home Screen for quick access during tournaments.
             </DialogDescription>
@@ -134,7 +136,7 @@ export function PwaInstallGuide() {
 
               return (
                 <li className="flex gap-3 py-4" key={step.title}>
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cyan-50 text-sm font-bold text-cyan-800">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-orange/10 text-sm font-bold text-brand-orange-dark">
                     {index + 1}
                   </span>
                   <div className="min-w-0 flex-1">

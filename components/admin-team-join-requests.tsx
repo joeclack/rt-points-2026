@@ -71,7 +71,7 @@ export function AdminTeamJoinRequests({
                           {player.name}
                         </span>
                         {player.slot === 1 ? (
-                          <span className="ml-auto shrink-0 text-xs font-medium text-cyan-700">
+                          <span className="ml-auto shrink-0 text-xs font-medium text-brand-orange-dark">
                             Leader
                           </span>
                         ) : null}

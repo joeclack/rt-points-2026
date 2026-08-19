@@ -555,7 +555,7 @@ export function FootballLiveCentre({
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-950">
+    <main className="min-h-screen bg-brand-cream text-slate-950">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">

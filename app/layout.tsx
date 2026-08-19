@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 
 import { PwaInstallGuide } from "@/components/pwa-install-guide";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
+import "@fontsource/anton/400.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -32,7 +33,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f172a",
+  themeColor: "#2b2625",
 };
 
 export default function RootLayout({

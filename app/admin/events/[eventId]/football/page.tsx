@@ -135,7 +135,7 @@ export default async function AdminEventFootballPage({
                   Generate a league schedule or complete knockout bracket.
                 </span>
               </span>
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-50 text-cyan-700">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-orange/10 text-brand-orange-dark">
                 <Plus className="h-5 w-5" />
               </span>
             </summary>
@@ -171,7 +171,7 @@ export default async function AdminEventFootballPage({
 
           {selectedTournament ? (
             <>
-              <section className="mb-6 rounded-xl bg-slate-950 p-5 text-white shadow-lg sm:p-6">
+              <section className="mb-6 rounded-xl bg-brand-charcoal p-5 text-white shadow-lg sm:p-6">
                 <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -186,7 +186,7 @@ export default async function AdminEventFootballPage({
                       >
                         {selectedTournament.status}
                       </StatusPill>
-                      <span className="text-xs font-bold uppercase tracking-wider text-cyan-300">
+                      <span className="text-xs font-bold uppercase tracking-wider text-brand-orange">
                         {selectedTournament.format === "league"
                           ? "League table"
                           : "Knockout cup"}
@@ -199,7 +199,7 @@ export default async function AdminEventFootballPage({
                       {tournamentTeams.length} teams · {matches.length} matches
                     </p>
                   </div>
-                  <Trophy className="h-10 w-10 text-cyan-300" />
+                  <Trophy className="h-10 w-10 text-brand-orange" />
                 </div>
               </section>
 
@@ -247,7 +247,7 @@ export default async function AdminEventFootballPage({
 
               <details className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white">
                 <summary className="flex cursor-pointer list-none items-center gap-3 p-4 font-semibold text-slate-900">
-                  <CalendarPlus className="h-5 w-5 text-cyan-700" />
+                  <CalendarPlus className="h-5 w-5 text-brand-orange-dark" />
                   Add an extra match
                 </summary>
                 <form

@@ -8,10 +8,10 @@ export function AdminEventNav() {
   return (
     <header className="mb-8 flex items-center justify-between border-b border-slate-200 pb-4">
       <Link
-        className="text-sm font-semibold text-slate-950 hover:text-slate-600"
+        className="font-brand text-xl uppercase tracking-wide text-brand-charcoal hover:text-brand-orange-dark"
         href="/admin/events"
       >
-        Tournament admin
+        TJG Tournaments
       </Link>
 
       <div className="flex items-center gap-2">

@@ -3,23 +3,23 @@
 @tailwind utilities;
 
 :root {
-  --background: 210 20% 98%;
-  --foreground: 222 47% 11%;
+  --background: 20 33% 98%;
+  --foreground: 10 8% 16%;
   --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  --primary: 222 47% 11%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222 47% 11%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215 16% 47%;
-  --accent: 189 94% 43%;
-  --accent-foreground: 210 40% 98%;
+  --card-foreground: 10 8% 16%;
+  --primary: 15 86% 57%;
+  --primary-foreground: 10 8% 16%;
+  --secondary: 20 25% 94%;
+  --secondary-foreground: 10 8% 16%;
+  --muted: 20 20% 95%;
+  --muted-foreground: 12 8% 42%;
+  --accent: 15 86% 57%;
+  --accent-foreground: 10 8% 16%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 210 40% 98%;
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --ring: 189 94% 43%;
+  --border: 18 17% 87%;
+  --input: 18 17% 87%;
+  --ring: 15 86% 57%;
   --radius: 0.5rem;
 }
 
@@ -32,9 +32,16 @@ body {
   color: hsl(var(--foreground));
 }
 
+h1,
+.font-brand {
+  font-family: "Anton", Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.015em;
+}
+
 .display-surface {
   background:
-    radial-gradient(circle at 12% 18%, rgba(20, 184, 166, 0.18), transparent 30%),
-    radial-gradient(circle at 82% 10%, rgba(245, 158, 11, 0.18), transparent 28%),
-    linear-gradient(135deg, #07111f 0%, #122033 54%, #08131f 100%);
+    radial-gradient(circle at 12% 18%, rgba(241, 99, 48, 0.22), transparent 30%),
+    radial-gradient(circle at 82% 10%, rgba(241, 99, 48, 0.12), transparent 28%),
+    linear-gradient(135deg, #211d1c 0%, #352e2c 54%, #241f1e 100%);
 }

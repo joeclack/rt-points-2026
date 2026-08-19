@@ -72,12 +72,12 @@ export default async function AdminEventsPage({
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-brand-cream">
       <section className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6 md:py-8">
         <AdminEventNav />
 
         <header className="mb-7">
-          <h1 className="text-3xl font-semibold tracking-normal text-slate-950">
+          <h1 className="text-4xl uppercase leading-none text-brand-charcoal">
             Tournaments
           </h1>
           <p className="mt-1 text-sm text-slate-500">

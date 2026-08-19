@@ -13,7 +13,7 @@ export default async function TeamSubmittedPage({
   const event = await getPublicEventShellBySlug(eventSlug);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-6 py-10">
+    <main className="flex min-h-screen items-center justify-center bg-brand-cream px-6 py-10">
       <section className="w-full max-w-lg text-center">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
           <CheckCircle2 className="h-8 w-8" />

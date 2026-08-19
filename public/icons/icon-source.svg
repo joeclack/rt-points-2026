@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#0f172a"/>
-  <path d="M128 136h256a40 40 0 0 1 40 40v160a40 40 0 0 1-40 40H128a40 40 0 0 1-40-40V176a40 40 0 0 1 40-40Z" fill="#111f34" stroke="#22d3ee" stroke-width="16"/>
-  <text x="256" y="286" fill="#f8fafc" font-family="Arial, Helvetica, sans-serif" font-size="94" font-weight="700" letter-spacing="4" text-anchor="middle">TJG</text>
-  <circle cx="114" cy="112" r="14" fill="#22d3ee"/>
-  <circle cx="398" cy="400" r="14" fill="#f59e0b"/>
+  <rect width="512" height="512" rx="112" fill="#2b2625"/>
+  <path d="M128 136h256a40 40 0 0 1 40 40v160a40 40 0 0 1-40 40H128a40 40 0 0 1-40-40V176a40 40 0 0 1 40-40Z" fill="#2b2625" stroke="#f16330" stroke-width="16"/>
+  <text x="256" y="291" fill="#f16330" font-family="Impact, Arial Narrow, sans-serif" font-size="112" letter-spacing="5" text-anchor="middle">TJG</text>
+  <circle cx="114" cy="112" r="14" fill="#f16330"/>
+  <circle cx="398" cy="400" r="14" fill="#f16330"/>
 </svg>
