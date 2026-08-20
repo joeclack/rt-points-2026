@@ -44,7 +44,11 @@ export default async function AdminEventTeamsPage({
       ) : null}
 
       <AdminTeamJoinRequests eventId={event.id} requests={requests} />
-      <AdminTeamControls eventId={event.id} teams={event.teams} />
+      <AdminTeamControls
+        eventId={event.id}
+        teams={event.teams}
+        teamSize={event.teamSize}
+      />
     </div>
   );
 }

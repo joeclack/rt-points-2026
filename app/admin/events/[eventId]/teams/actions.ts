@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { containsProfanity } from "@/lib/profanity";
 import { createClient } from "@/lib/supabase/server";
 
 const defaultTeamColour = "#14b8a6";
@@ -122,9 +123,69 @@ export async function updateTeam(formData: FormData) {
   const colour = normalizeColour(getText(formData, "colour"));
   const badgeText = normalizeBadgeText(getText(formData, "badge_text"), name);
   const badgeUrl = normalizeBadgeUrl(getText(formData, "badge_url"));
+  const playerSlots = formData
+    .getAll("player_slot")
+    .map((slot) => Number(slot));
+  const existingPlayers = playerSlots.map((slot) => ({
+    slot,
+    name: getText(formData, `player_${slot}_name`),
+  }));
+  const newPlayerSlots = formData
+    .getAll("new_player_slot")
+    .map((slot) => Number(slot));
+  const newPlayers = newPlayerSlots.map((slot) => ({
+    slot,
+    name: getText(formData, `new_player_${slot}_name`),
+  }));
+  const shouldCreateRoster = newPlayers.some((player) => player.name);
+  const players = existingPlayers.length
+    ? existingPlayers
+    : shouldCreateRoster
+      ? newPlayers
+      : [];
 
   if (!name) {
     redirect(adminPath(eventId, { error: "Team name is required" }));
+  }
+
+  if (containsProfanity(name)) {
+    redirect(
+      adminPath(eventId, {
+        error: "Team name contains language that is not allowed",
+      }),
+    );
+  }
+
+  if (
+    players.some(
+      (player) =>
+        !Number.isInteger(player.slot) ||
+        player.slot < 1 ||
+        player.slot > 20 ||
+        player.name.length < 2 ||
+        player.name.length > 80,
+    )
+  ) {
+    redirect(
+      adminPath(eventId, {
+        error: "Every player name must be between 2 and 80 characters",
+      }),
+    );
+  }
+
+  if (players.some((player) => containsProfanity(player.name))) {
+    redirect(
+      adminPath(eventId, {
+        error: "A player name contains language that is not allowed",
+      }),
+    );
+  }
+
+  if (
+    new Set(players.map((player) => player.name.toLowerCase())).size !==
+    players.length
+  ) {
+    redirect(adminPath(eventId, { error: "Enter different player names" }));
   }
 
   const supabase = await createClient();
@@ -141,6 +202,18 @@ export async function updateTeam(formData: FormData) {
 
   if (error) {
     redirect(adminPath(eventId, { error: error.message }));
+  }
+
+  if (players.length) {
+    const { error: rosterError } = await supabase.rpc("update_team_roster", {
+      p_event_id: eventId,
+      p_team_id: teamId,
+      p_players: players,
+    });
+
+    if (rosterError) {
+      redirect(adminPath(eventId, { error: rosterError.message }));
+    }
   }
 
   await revalidateEventPages(eventId);

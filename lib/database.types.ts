@@ -862,6 +862,14 @@ export type Database = {
         };
         Returns: string | null;
       };
+      update_team_roster: {
+        Args: {
+          p_event_id: string;
+          p_team_id: string;
+          p_players: Json;
+        };
+        Returns: number;
+      };
       verify_event_viewer_access: {
         Args: {
           event_slug: string;

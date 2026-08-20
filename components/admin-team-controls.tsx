@@ -30,10 +30,15 @@ import type { Team } from "@/lib/sample-data";
 
 type AdminTeamControlsProps = {
   eventId: string;
+  teamSize: number;
   teams: Team[];
 };
 
-export function AdminTeamControls({ eventId, teams }: AdminTeamControlsProps) {
+export function AdminTeamControls({
+  eventId,
+  teamSize,
+  teams,
+}: AdminTeamControlsProps) {
   const [settingsTeamId, setSettingsTeamId] = useState<string | null>(null);
 
   return (
@@ -107,12 +112,16 @@ export function AdminTeamControls({ eventId, teams }: AdminTeamControlsProps) {
                         >
                           <input name="event_id" type="hidden" value={eventId} />
                           <input name="team_id" type="hidden" value={team.id} />
-                          <Input
-                            aria-label="Team name"
-                            defaultValue={team.name}
-                            name="name"
-                            required
-                          />
+                          <label className="block space-y-1.5">
+                            <span className="text-sm font-medium text-slate-700">
+                              Team name
+                            </span>
+                            <Input
+                              defaultValue={team.name}
+                              name="name"
+                              required
+                            />
+                          </label>
                           <div className="grid grid-cols-[72px_1fr] gap-3">
                             <Input
                               aria-label="Team colour"
@@ -136,6 +145,64 @@ export function AdminTeamControls({ eventId, teams }: AdminTeamControlsProps) {
                             placeholder="Badge image URL"
                             type="url"
                           />
+                          <fieldset className="space-y-2 rounded-md border border-slate-200 p-3">
+                            <legend className="px-1 text-sm font-medium text-slate-700">
+                              Team members
+                            </legend>
+                            {team.players.length ? (
+                              team.players.map((player) => (
+                                <label
+                                  className="grid grid-cols-[2rem_minmax(0,1fr)] items-center gap-2"
+                                  key={player.slot}
+                                >
+                                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-xs font-medium text-slate-500">
+                                    {player.slot}
+                                  </span>
+                                  <input
+                                    name="player_slot"
+                                    type="hidden"
+                                    value={player.slot}
+                                  />
+                                  <Input
+                                    aria-label={`Player ${player.slot} name`}
+                                    defaultValue={player.name}
+                                    name={`player_${player.slot}_name`}
+                                    required
+                                  />
+                                </label>
+                              ))
+                            ) : (
+                              <>
+                                <p className="text-xs text-slate-500">
+                                  Add names to create this team&apos;s roster.
+                                </p>
+                                {Array.from({ length: teamSize }, (_, index) => {
+                                  const slot = index + 1;
+
+                                  return (
+                                    <label
+                                      className="grid grid-cols-[2rem_minmax(0,1fr)] items-center gap-2"
+                                      key={slot}
+                                    >
+                                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-xs font-medium text-slate-500">
+                                        {slot}
+                                      </span>
+                                      <input
+                                        name="new_player_slot"
+                                        type="hidden"
+                                        value={slot}
+                                      />
+                                      <Input
+                                        aria-label={`Player ${slot} name`}
+                                        name={`new_player_${slot}_name`}
+                                        placeholder={`Player ${slot}`}
+                                      />
+                                    </label>
+                                  );
+                                })}
+                              </>
+                            )}
+                          </fieldset>
                           <PendingSubmitButton
                             className="w-full"
                             pendingLabel="Saving..."

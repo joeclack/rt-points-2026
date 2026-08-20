@@ -30,6 +30,14 @@ type TeamRow = {
   badge_url: string | null;
 };
 
+type TeamPlayerRow = {
+  created_team_id: string | null;
+  team_join_request_players: Array<{
+    slot: number;
+    name: string;
+  }>;
+};
+
 type PublicEventPayload = EventRow & {
   teams: Array<{
     id: string;
@@ -96,14 +104,17 @@ function mapEvent(
   };
 }
 
-function mapTeam(row: TeamRow): Team {
+function mapTeam(
+  row: TeamRow,
+  players: Array<{ slot: number; name: string }> = [],
+): Team {
   return {
     id: row.id,
     name: row.name,
     colour: row.colour,
     badge: row.badge_text ?? row.name.charAt(0).toUpperCase(),
     badgeUrl: row.badge_url,
-    players: [],
+    players: [...players].sort((a, b) => a.slot - b.slot),
   };
 }
 
@@ -333,6 +344,26 @@ const getAdminEventByIdCached = cache(async function getAdminEventByIdCached(
     notFound();
   }
 
+  const teamIds = event.teams.map((team) => team.id);
+  const { data: rosterRows } = teamIds.length
+    ? await supabase
+        .from("team_join_requests")
+        .select("created_team_id,team_join_request_players(slot,name)")
+        .eq("event_id", id)
+        .eq("status", "accepted")
+        .in("created_team_id", teamIds)
+    : { data: [] };
+
+  const playersByTeamId = new Map<
+    string,
+    Array<{ slot: number; name: string }>
+  >();
+  for (const row of (rosterRows ?? []) as unknown as TeamPlayerRow[]) {
+    if (row.created_team_id) {
+      playersByTeamId.set(row.created_team_id, row.team_join_request_players);
+    }
+  }
+
   const accessCodeRows = event.event_viewer_access_codes;
   const accessCode = Array.isArray(accessCodeRows)
     ? accessCodeRows[0]
@@ -341,7 +372,7 @@ const getAdminEventByIdCached = cache(async function getAdminEventByIdCached(
   return {
     ...mapEvent(
       event,
-      event.teams.map((team) => mapTeam(team)),
+      event.teams.map((team) => mapTeam(team, playersByTeamId.get(team.id))),
       detail.role,
     ),
     viewerAccessCode: accessCode?.access_code ?? null,
