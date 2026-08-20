@@ -78,6 +78,7 @@ export type Database = {
           visibility: "public" | "private";
           football_enabled: boolean;
           team_size: number;
+          team_signups_enabled: boolean;
           football_match_minutes: number;
           sport: "football" | "basketball";
           status: "draft" | "live" | "finished";
@@ -95,6 +96,7 @@ export type Database = {
           visibility?: "public" | "private";
           football_enabled?: boolean;
           team_size?: number;
+          team_signups_enabled?: boolean;
           football_match_minutes?: number;
           sport?: "football" | "basketball";
           status?: "draft" | "live" | "finished";
@@ -112,6 +114,7 @@ export type Database = {
           visibility?: "public" | "private";
           football_enabled?: boolean;
           team_size?: number;
+          team_signups_enabled?: boolean;
           football_match_minutes?: number;
           sport?: "football" | "basketball";
           status?: "draft" | "live" | "finished";

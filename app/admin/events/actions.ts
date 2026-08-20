@@ -197,6 +197,44 @@ export async function updateEventDetails(formData: FormData) {
   redirect(eventAdminSectionPath(eventId, "settings", { message: "Tournament details saved" }));
 }
 
+export async function updateTeamSignups(formData: FormData) {
+  const eventId = String(formData.get("event_id") ?? "").trim();
+  const teamSignupsEnabled = formData.get("team_signups_enabled") === "on";
+
+  if (!eventId) {
+    redirect("/admin/events?error=Missing%20tournament");
+  }
+
+  const { supabase } = await requireUser();
+  const { data: event, error } = await supabase
+    .from("events")
+    .update({ team_signups_enabled: teamSignupsEnabled })
+    .eq("id", eventId)
+    .select("slug")
+    .single();
+
+  if (error || !event) {
+    redirect(
+      eventAdminSectionPath(eventId, "settings", {
+        error: error?.message ?? "Unable to update team signups",
+      }),
+    );
+  }
+
+  revalidatePath("/admin/events");
+  revalidatePath(`/admin/events/${eventId}`);
+  revalidatePath(`/admin/events/${eventId}/settings`);
+  revalidatePath(`/events/${event.slug}`);
+  revalidatePath(`/events/${event.slug}/join`);
+  redirect(
+    eventAdminSectionPath(eventId, "settings", {
+      message: teamSignupsEnabled
+        ? "Team signups opened"
+        : "Team signups closed",
+    }),
+  );
+}
+
 export async function archiveEvent(formData: FormData) {
   const eventId = String(formData.get("event_id") ?? "").trim();
 

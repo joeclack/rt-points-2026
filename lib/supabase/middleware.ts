@@ -6,6 +6,16 @@ import type { Database } from "@/lib/database.types";
 const protectedPrefixes = ["/admin"];
 const authRoutes = ["/login"];
 
+function redirectWithCookies(url: URL, response: NextResponse) {
+  const redirectResponse = NextResponse.redirect(url);
+
+  response.cookies.getAll().forEach((cookie) => {
+    redirectResponse.cookies.set(cookie);
+  });
+
+  return redirectResponse;
+}
+
 export async function updateSession(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     ?.trim()
@@ -40,24 +50,23 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data } = await supabase.auth.getClaims();
+  const isAuthenticated = Boolean(data?.claims.sub);
   const pathname = request.nextUrl.pathname;
   const isProtected = protectedPrefixes.some((prefix) => pathname.startsWith(prefix));
   const isAuthRoute = authRoutes.includes(pathname);
 
-  if (isProtected && !user) {
+  if (isProtected && !isAuthenticated) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/login";
     redirectUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(redirectUrl);
+    return redirectWithCookies(redirectUrl, response);
   }
 
-  if (isAuthRoute && user) {
+  if (isAuthRoute && isAuthenticated) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/admin/events";
-    return NextResponse.redirect(redirectUrl);
+    return redirectWithCookies(redirectUrl, response);
   }
 
   return response;

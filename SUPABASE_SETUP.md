@@ -52,6 +52,7 @@ supabase/migrations/018_atomic_football_tournament_creation.sql
 supabase/migrations/019_invite_only_app_admins.sql
 supabase/migrations/020_remove_invited_app_admins.sql
 supabase/migrations/021_fix_event_archive_status_type.sql
+supabase/migrations/022_team_signup_controls.sql
 ```
 
 Migration `006` is intentionally destructive when upgrading an existing
@@ -95,6 +96,10 @@ owner before deleting their authentication account and tournament access.
 
 Migration `021` fixes archive and restore operations by keeping tournament status
 comparisons typed as the `event_status` enum.
+
+Migration `022` adds the team signup setting and enforces closed signups for all
+new public join requests. Existing tournaments remain open until an admin closes
+them from tournament settings.
 
 ## Invite-only Auth
 

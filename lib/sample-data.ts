@@ -15,6 +15,7 @@ export type EventSummary = {
   location: string;
   visibility: "public" | "private";
   teamSize: number;
+  teamSignupsEnabled: boolean;
   footballMatchMinutes: number;
   sport: "football" | "basketball";
   status: "draft" | "live" | "finished";
@@ -61,6 +62,7 @@ export const sampleEvents: EventSummary[] = [
     location: "Main auditorium",
     visibility: "public",
     teamSize: 5,
+    teamSignupsEnabled: true,
     footballMatchMinutes: 20,
     sport: "football",
     status: "live",
@@ -76,6 +78,7 @@ export const sampleEvents: EventSummary[] = [
     location: "Main pitch",
     visibility: "public",
     teamSize: 5,
+    teamSignupsEnabled: true,
     footballMatchMinutes: 20,
     sport: "football",
     status: "live",

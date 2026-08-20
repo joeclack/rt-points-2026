@@ -2,7 +2,6 @@
 
 import { LoaderCircle } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +15,6 @@ import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 
 export default function AcceptInvitePage() {
-  const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [checking, setChecking] = useState(true);
   const [hasSession, setHasSession] = useState(false);
@@ -47,7 +45,11 @@ export default function AcceptInvitePage() {
           verifyError?.message ??
             (data.session ? undefined : "This invitation link is invalid or has expired."),
         );
-        window.history.replaceState({}, document.title, window.location.pathname);
+        window.history.replaceState(
+          window.history.state,
+          document.title,
+          window.location.pathname,
+        );
         setChecking(false);
         return;
       }
@@ -115,9 +117,7 @@ export default function AcceptInvitePage() {
         return;
       }
 
-      window.history.replaceState({}, document.title, window.location.pathname);
-      router.replace("/admin/events");
-      router.refresh();
+      window.location.replace("/admin/events");
     } catch {
       setError("The password could not be saved. Check your connection and try again.");
       setSaving(false);

@@ -14,6 +14,7 @@ Players can search for a public tournament and submit a five-player team for adm
 - Owner-controlled email invitations and app-level admin access.
 - Owner-controlled invitation cancellation and admin removal.
 - Event ownership and shared admin access.
+- Tournament-level controls for opening and closing team signups.
 - Optional viewer access codes for public pages.
 - Football teams with names, colours and badges.
 - Five-player public team applications with profanity validation.

@@ -51,10 +51,12 @@ export default async function EventDetailPage({
       label: "View tournament",
     },
     {
-      description: `Enter a ${event.teamSize}-player team for approval`,
-      href: `/events/${event.slug}/join`,
+      description: event.teamSignupsEnabled
+        ? `Enter a ${event.teamSize}-player team for approval`
+        : "This tournament is no longer accepting team submissions",
+      href: event.teamSignupsEnabled ? `/events/${event.slug}/join` : null,
       icon: UsersRound,
-      label: "Submit team",
+      label: event.teamSignupsEnabled ? "Submit team" : "Team signups closed",
     },
   ];
 
@@ -92,6 +94,42 @@ export default async function EventDetailPage({
           <div className="divide-y divide-slate-100">
             {actions.map((action) => {
               const Icon = action.icon;
+              const content = (
+                <>
+                  <Icon
+                    className={`h-5 w-5 shrink-0 ${
+                      action.href ? "text-slate-500" : "text-slate-400"
+                    }`}
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span
+                      className={`block font-semibold ${
+                        action.href ? "text-slate-950" : "text-slate-600"
+                      }`}
+                    >
+                      {action.label}
+                    </span>
+                    <span className="mt-0.5 block text-sm text-slate-500">
+                      {action.description}
+                    </span>
+                  </span>
+                  {action.href ? (
+                    <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" />
+                  ) : null}
+                </>
+              );
+
+              if (!action.href) {
+                return (
+                  <div
+                    aria-disabled="true"
+                    className="flex items-center gap-4 bg-slate-50 px-4 py-5 sm:px-5"
+                    key={action.label}
+                  >
+                    {content}
+                  </div>
+                );
+              }
 
               return (
                 <Link
@@ -99,16 +137,7 @@ export default async function EventDetailPage({
                   href={action.href}
                   key={action.label}
                 >
-                  <Icon className="h-5 w-5 shrink-0 text-slate-500" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-semibold text-slate-950">
-                      {action.label}
-                    </span>
-                    <span className="mt-0.5 block text-sm text-slate-500">
-                      {action.description}
-                    </span>
-                  </span>
-                  <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" />
+                  {content}
                 </Link>
               );
             })}
