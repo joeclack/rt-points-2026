@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { AcceptedTeamsList } from "@/components/accepted-teams-list";
 import { EventAccessCodeForm } from "@/components/event-access-code-form";
 import {
   getPublicEventBySlug,
@@ -142,6 +143,10 @@ export default async function EventDetailPage({
               );
             })}
           </div>
+        </div>
+
+        <div className="mt-8">
+          <AcceptedTeamsList teams={event.teams} />
         </div>
       </div>
     </main>
