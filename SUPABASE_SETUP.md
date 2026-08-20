@@ -53,6 +53,7 @@ supabase/migrations/019_invite_only_app_admins.sql
 supabase/migrations/020_remove_invited_app_admins.sql
 supabase/migrations/021_fix_event_archive_status_type.sql
 supabase/migrations/022_team_signup_controls.sql
+supabase/migrations/023_public_team_rosters.sql
 ```
 
 Migration `006` is intentionally destructive when upgrading an existing
@@ -100,6 +101,9 @@ comparisons typed as the `event_status` enum.
 Migration `022` adds the team signup setting and enforces closed signups for all
 new public join requests. Existing tournaments remain open until an admin closes
 them from tournament settings.
+
+Migration `023` includes accepted team rosters in the access-controlled public
+tournament payload. Teams created manually remain visible without a member list.
 
 ## Invite-only Auth
 

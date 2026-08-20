@@ -37,6 +37,10 @@ type PublicEventPayload = EventRow & {
     colour: string;
     badge_text: string | null;
     badge_url: string | null;
+    players?: Array<{
+      slot: number;
+      name: string;
+    }>;
   }>;
 };
 
@@ -99,6 +103,7 @@ function mapTeam(row: TeamRow): Team {
     colour: row.colour,
     badge: row.badge_text ?? row.name.charAt(0).toUpperCase(),
     badgeUrl: row.badge_url,
+    players: [],
   };
 }
 
@@ -111,6 +116,7 @@ function mapPublicEventPayload(payload: PublicEventPayload): EventSummary {
       colour: team.colour,
       badge: team.badge_text ?? team.name.charAt(0).toUpperCase(),
       badgeUrl: team.badge_url,
+      players: [...(team.players ?? [])].sort((a, b) => a.slot - b.slot),
     })),
   );
 }

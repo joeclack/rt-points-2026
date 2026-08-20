@@ -4,6 +4,10 @@ export type Team = {
   colour: string;
   badge: string;
   badgeUrl?: string | null;
+  players: Array<{
+    slot: number;
+    name: string;
+  }>;
 };
 
 export type EventSummary = {
@@ -30,24 +34,52 @@ export const sampleTeams: Team[] = [
     name: "Zion",
     colour: "#14b8a6",
     badge: "Z",
+    players: [
+      { slot: 1, name: "Alex" },
+      { slot: 2, name: "Jordan" },
+      { slot: 3, name: "Casey" },
+      { slot: 4, name: "Morgan" },
+      { slot: 5, name: "Taylor" },
+    ],
   },
   {
     id: "eden",
     name: "Eden",
     colour: "#f59e0b",
     badge: "E",
+    players: [
+      { slot: 1, name: "Jamie" },
+      { slot: 2, name: "Sam" },
+      { slot: 3, name: "Riley" },
+      { slot: 4, name: "Cameron" },
+      { slot: 5, name: "Drew" },
+    ],
   },
   {
     id: "judah",
     name: "Judah",
     colour: "#ef4444",
     badge: "J",
+    players: [
+      { slot: 1, name: "Avery" },
+      { slot: 2, name: "Quinn" },
+      { slot: 3, name: "Parker" },
+      { slot: 4, name: "Reese" },
+      { slot: 5, name: "Rowan" },
+    ],
   },
   {
     id: "bethel",
     name: "Bethel",
     colour: "#6366f1",
     badge: "B",
+    players: [
+      { slot: 1, name: "Devon" },
+      { slot: 2, name: "Ellis" },
+      { slot: 3, name: "Hayden" },
+      { slot: 4, name: "Finley" },
+      { slot: 5, name: "Blair" },
+    ],
   },
 ];
 
