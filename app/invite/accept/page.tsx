@@ -14,18 +14,25 @@ import {
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 
+const inviteTokenStorageKey = "rt-points-admin-invite-token";
+
 export default function AcceptInvitePage() {
   const supabase = useMemo(() => createClient(), []);
   const [checking, setChecking] = useState(true);
   const [hasSession, setHasSession] = useState(false);
   const [error, setError] = useState<string>();
+  const [tokenHash, setTokenHash] = useState<string>();
+  const [verifying, setVerifying] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const hashParams = new URLSearchParams(window.location.hash.slice(1));
     const queryParams = new URLSearchParams(window.location.search);
     const inviteError = hashParams.get("error_description");
-    const tokenHash = queryParams.get("token_hash");
+    const inviteTokenHash =
+      queryParams.get("token_hash") ??
+      window.sessionStorage.getItem(inviteTokenStorageKey) ??
+      undefined;
 
     if (inviteError) {
       setError(inviteError);
@@ -34,17 +41,9 @@ export default function AcceptInvitePage() {
     }
 
     async function establishSession() {
-      if (tokenHash) {
-        const { data, error: verifyError } = await supabase.auth.verifyOtp({
-          token_hash: tokenHash,
-          type: "invite",
-        });
-
-        setHasSession(Boolean(data.session));
-        setError(
-          verifyError?.message ??
-            (data.session ? undefined : "This invitation link is invalid or has expired."),
-        );
+      if (inviteTokenHash) {
+        window.sessionStorage.setItem(inviteTokenStorageKey, inviteTokenHash);
+        setTokenHash(inviteTokenHash);
         window.history.replaceState(
           window.history.state,
           document.title,
@@ -65,6 +64,35 @@ export default function AcceptInvitePage() {
 
     void establishSession();
   }, [supabase]);
+
+  async function verifyInvite() {
+    if (!tokenHash) {
+      setError("This invitation link is invalid or has expired.");
+      return;
+    }
+
+    setVerifying(true);
+    setError(undefined);
+
+    const { data, error: verifyError } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: "invite",
+    });
+
+    const verified = Boolean(data.session);
+    setHasSession(verified);
+    setError(
+      verifyError?.message ??
+        (verified ? undefined : "This invitation link is invalid or has expired."),
+    );
+
+    if (verified) {
+      window.sessionStorage.removeItem(inviteTokenStorageKey);
+      setTokenHash(undefined);
+    }
+
+    setVerifying(false);
+  }
 
   async function setPassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -173,6 +201,27 @@ export default function AcceptInvitePage() {
                 )}
               </Button>
             </form>
+          ) : tokenHash ? (
+            <div className="space-y-4">
+              <p className="text-sm text-slate-600">
+                Press continue to verify your invitation and choose a password.
+              </p>
+              {error ? (
+                <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {error}
+                </p>
+              ) : null}
+              <Button className="w-full" disabled={verifying} onClick={verifyInvite}>
+                {verifying ? (
+                  <>
+                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                    Verifying invitation...
+                  </>
+                ) : (
+                  "Continue"
+                )}
+              </Button>
+            </div>
           ) : (
             <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
               {error}
