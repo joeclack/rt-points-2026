@@ -50,6 +50,8 @@ supabase/migrations/016_resilient_team_and_event_commands.sql
 supabase/migrations/017_resilient_basketball_commands.sql
 supabase/migrations/018_atomic_football_tournament_creation.sql
 supabase/migrations/019_invite_only_app_admins.sql
+supabase/migrations/020_remove_invited_app_admins.sql
+supabase/migrations/021_fix_event_archive_status_type.sql
 ```
 
 Migration `006` is intentionally destructive when upgrading an existing
@@ -86,6 +88,13 @@ already exists in Supabase Auth, it is promoted when the migration runs. If it
 does not exist yet, invite it once from **Authentication > Users > Add user >
 Send invitation** after applying the migration; the Auth trigger will seed it
 as owner automatically.
+
+Migration `020` lets the app owner cancel pending invitations and remove invited
+admins. Removing an accepted admin transfers their owned tournaments to the app
+owner before deleting their authentication account and tournament access.
+
+Migration `021` fixes archive and restore operations by keeping tournament status
+comparisons typed as the `event_status` enum.
 
 ## Invite-only Auth
 

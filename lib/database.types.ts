@@ -715,7 +715,14 @@ export type Database = {
           email: string;
           role: "owner" | "admin";
           created_at: string;
+          invitation_pending: boolean;
         }>;
+      };
+      remove_app_admin: {
+        Args: {
+          p_target_user_id: string;
+        };
+        Returns: number;
       };
       is_app_admin: {
         Args: Record<PropertyKey, never>;

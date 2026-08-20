@@ -12,6 +12,7 @@ Players can search for a public tournament and submit a five-player team for adm
 
 - Supabase Auth for event admins.
 - Owner-controlled email invitations and app-level admin access.
+- Owner-controlled invitation cancellation and admin removal.
 - Event ownership and shared admin access.
 - Optional viewer access codes for public pages.
 - Football teams with names, colours and badges.

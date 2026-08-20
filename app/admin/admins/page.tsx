@@ -3,6 +3,7 @@ import { ShieldCheck } from "lucide-react";
 import { inviteAppAdmin } from "@/app/admin/admins/actions";
 import { AdminEventNav } from "@/components/admin-event-nav";
 import { PendingSubmitButton } from "@/components/pending-submit-button";
+import { RemoveAppAdminButton } from "@/components/remove-app-admin-button";
 import { StatusPill } from "@/components/status-pill";
 import {
   Card,
@@ -72,9 +73,29 @@ export default async function AppAdminsPage({
                       </p>
                       <p className="truncate text-sm text-slate-500">{admin.email}</p>
                     </div>
-                    <StatusPill tone={admin.role === "owner" ? "live" : "neutral"}>
-                      {admin.role}
-                    </StatusPill>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <StatusPill
+                        tone={
+                          admin.role === "owner"
+                            ? "live"
+                            : admin.invitation_pending
+                              ? "planned"
+                              : "neutral"
+                        }
+                      >
+                        {admin.role === "admin" && admin.invitation_pending
+                          ? "invited"
+                          : admin.role}
+                      </StatusPill>
+                      {admin.role === "admin" ? (
+                        <RemoveAppAdminButton
+                          displayName={admin.display_name}
+                          email={admin.email}
+                          invitationPending={admin.invitation_pending}
+                          userId={admin.user_id}
+                        />
+                      ) : null}
+                    </div>
                   </div>
                 ))}
               </div>
