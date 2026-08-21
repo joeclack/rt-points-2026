@@ -6,20 +6,30 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
+  Clock3,
   MapPin,
   Radio,
   Trophy,
+  Users,
   Wifi,
   WifiOff,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 
 import { AcceptedTeamsList } from "@/components/accepted-teams-list";
 import { FootballBracket } from "@/components/football-bracket";
 import { FootballStandings } from "@/components/football-standings";
 import { TeamBadge } from "@/components/team-badge";
 import { TournamentWinnerBanner } from "@/components/tournament-winner-banner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { getFootballClock } from "@/lib/football-clock";
 import {
   footballStageLabels,
@@ -175,6 +185,179 @@ function PublicTeam({ team }: { team: Team }) {
   );
 }
 
+function TeamDetailPanel({ team }: { team: Team }) {
+  const players = [...team.players].sort((a, b) => a.slot - b.slot);
+  const leader = players[0];
+
+  return (
+    <section className="min-w-0 rounded-lg border border-slate-200 bg-white">
+      <div className="flex min-w-0 items-center gap-3 border-b border-slate-100 px-4 py-4">
+        <TeamBadge
+          badge={team.badge}
+          badgeUrl={team.badgeUrl}
+          className="h-12 w-12 shrink-0 text-base"
+          colour={team.colour}
+          name={team.name}
+        />
+        <div className="min-w-0">
+          <h3 className="truncate text-lg font-semibold text-slate-950">
+            {team.name}
+          </h3>
+          <p className="mt-0.5 text-sm text-slate-500">
+            {leader ? `${leader.name} · Team leader` : "Team leader TBC"}
+          </p>
+        </div>
+      </div>
+
+      {players.length ? (
+        <ol className="divide-y divide-slate-100">
+          {players.map((player) => (
+            <li
+              className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 text-sm"
+              key={`${team.id}-${player.slot}`}
+            >
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-500">
+                {player.slot}
+              </span>
+              <span className="min-w-0 break-words font-medium text-slate-800">
+                {player.name}
+              </span>
+              {player.slot === 1 ? (
+                <span className="rounded-full bg-brand-orange/15 px-2.5 py-1 text-xs font-semibold text-brand-orange-dark">
+                  Leader
+                </span>
+              ) : null}
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p className="px-4 py-5 text-sm text-slate-500">
+          Player list unavailable.
+        </p>
+      )}
+    </section>
+  );
+}
+
+function MatchDetailDialog({
+  match,
+  matchMinutes,
+  teams,
+  children,
+}: {
+  match: FootballMatch;
+  matchMinutes: number;
+  teams: Team[];
+  children: ReactNode;
+}) {
+  const homeTeam = teams.find((team) => team.id === match.homeTeamId);
+  const awayTeam = teams.find((team) => team.id === match.awayTeamId);
+  const isResult = match.status === "full_time";
+
+  if (!homeTeam || !awayTeam) {
+    return null;
+  }
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent className="left-0 top-0 h-dvh max-h-dvh w-screen max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-none border-0 p-0 sm:w-screen sm:p-0">
+        <div className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col px-4 py-5 sm:px-6 lg:px-8">
+          <DialogHeader className="mb-5 border-b border-slate-200 pb-5 pr-10">
+            <DialogTitle className="text-2xl font-semibold">
+              Fixture details
+            </DialogTitle>
+            <DialogDescription>
+              {footballStageLabels[match.stage]}
+              {match.stage === "league" ? ` · Round ${match.roundNumber}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+
+          <section className="mb-5 rounded-xl bg-brand-charcoal px-4 py-5 text-white sm:px-6">
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+              <div className="min-w-0 text-center">
+                <TeamBadge
+                  badge={homeTeam.badge}
+                  badgeUrl={homeTeam.badgeUrl}
+                  className="mx-auto h-14 w-14 text-lg"
+                  colour={homeTeam.colour}
+                  name={homeTeam.name}
+                />
+                <p className="mt-2 truncate text-sm font-semibold">
+                  {homeTeam.name}
+                </p>
+              </div>
+              <div className="text-center">
+                {isResult ? (
+                  <p className="text-4xl font-black">
+                    {match.homeScore}-{match.awayScore}
+                  </p>
+                ) : (
+                  <p className="text-xl font-black">vs</p>
+                )}
+                <p className="mt-1 text-xs uppercase tracking-wide text-slate-300">
+                  {isResult ? "Full-time" : formatKickoff(match.kickoffAt)}
+                </p>
+              </div>
+              <div className="min-w-0 text-center">
+                <TeamBadge
+                  badge={awayTeam.badge}
+                  badgeUrl={awayTeam.badgeUrl}
+                  className="mx-auto h-14 w-14 text-lg"
+                  colour={awayTeam.colour}
+                  name={awayTeam.name}
+                />
+                <p className="mt-2 truncate text-sm font-semibold">
+                  {awayTeam.name}
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <div className="mb-5 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase text-slate-500">
+                <Clock3 className="h-4 w-4" />
+                Length
+              </p>
+              <p className="mt-1 text-lg font-semibold text-slate-950">
+                {matchMinutes} minutes
+              </p>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase text-slate-500">
+                <CalendarClock className="h-4 w-4" />
+                Kickoff
+              </p>
+              <p className="mt-1 text-lg font-semibold text-slate-950">
+                {formatKickoff(match.kickoffAt)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase text-slate-500">
+                <MapPin className="h-4 w-4" />
+                Pitch
+              </p>
+              <p className="mt-1 text-lg font-semibold text-slate-950">
+                {match.venue ?? "TBC"}
+              </p>
+            </div>
+          </div>
+
+          <div className="mb-3 flex items-center gap-2 text-base font-semibold text-slate-950">
+            <Users className="h-4 w-4 text-slate-500" />
+            Team info
+          </div>
+          <div className="grid flex-1 gap-4 lg:grid-cols-2">
+            <TeamDetailPanel team={homeTeam} />
+            <TeamDetailPanel team={awayTeam} />
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function LiveMatch({
   clockNow,
   highlighted,
@@ -270,7 +453,15 @@ function LiveMatch({
   );
 }
 
-function MatchRow({ match, teams }: { match: FootballMatch; teams: Team[] }) {
+function MatchRow({
+  match,
+  matchMinutes,
+  teams,
+}: {
+  match: FootballMatch;
+  matchMinutes: number;
+  teams: Team[];
+}) {
   const homeTeam = teams.find((team) => team.id === match.homeTeamId);
   const awayTeam = teams.find((team) => team.id === match.awayTeamId);
   const isResult = match.status === "full_time";
@@ -280,7 +471,11 @@ function MatchRow({ match, teams }: { match: FootballMatch; teams: Team[] }) {
   }
 
   return (
-    <article className="grid grid-cols-[5.5rem_minmax(0,1fr)_1.5rem] items-center gap-3 px-4 py-3 sm:grid-cols-[8rem_minmax(0,1fr)_2rem]">
+    <MatchDetailDialog match={match} matchMinutes={matchMinutes} teams={teams}>
+      <button
+        className="grid w-full grid-cols-[5.5rem_minmax(0,1fr)_2rem] items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:grid-cols-[8rem_minmax(0,1fr)_2.5rem]"
+        type="button"
+      >
       <div className="text-xs text-slate-500">
         <p className="font-medium text-slate-700">
           {isResult ? "FT" : formatKickoff(match.kickoffAt)}
@@ -314,21 +509,24 @@ function MatchRow({ match, teams }: { match: FootballMatch; teams: Team[] }) {
         ))}
       </div>
 
-      <span className="flex justify-center text-slate-300">
-        {isResult ? null : <ChevronRight className="h-4 w-4" />}
+      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+        <ChevronRight className="h-4 w-4" />
       </span>
-    </article>
+      </button>
+    </MatchDetailDialog>
   );
 }
 
 function MatchList({
   expanded,
   matches,
+  matchMinutes,
   onExpand,
   teams,
 }: {
   expanded: boolean;
   matches: FootballMatch[];
+  matchMinutes: number;
   onExpand: () => void;
   teams: Team[];
 }) {
@@ -341,7 +539,12 @@ function MatchList({
     <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
       <div className="divide-y divide-slate-100">
         {visibleMatches.map((match) => (
-          <MatchRow key={match.id} match={match} teams={teams} />
+          <MatchRow
+            key={match.id}
+            match={match}
+            matchMinutes={matchMinutes}
+            teams={teams}
+          />
         ))}
       </div>
       {hiddenCount > 0 ? (
@@ -707,6 +910,7 @@ export function FootballLiveCentre({
                 <MatchList
                   expanded={showAllFixtures}
                   matches={upcomingMatches}
+                  matchMinutes={matchMinutes}
                   onExpand={() => setShowAllFixtures(true)}
                   teams={initialTeams}
                 />
@@ -737,6 +941,7 @@ export function FootballLiveCentre({
                 <MatchList
                   expanded={showAllResults}
                   matches={results}
+                  matchMinutes={matchMinutes}
                   onExpand={() => setShowAllResults(true)}
                   teams={initialTeams}
                 />
