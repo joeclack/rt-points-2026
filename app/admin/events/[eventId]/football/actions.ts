@@ -211,6 +211,45 @@ export async function createFootballTournament(formData: FormData) {
   );
 }
 
+export async function deleteFootballTournament(formData: FormData) {
+  const eventId = getEventId(formData);
+  const tournamentId = getTournamentId(formData);
+  const confirm = getText(formData, "confirm");
+
+  if (confirm !== "DELETE") {
+    fail(eventId, tournamentId, "Type DELETE to remove a tournament");
+  }
+
+  const { supabase } = await requireEventAdmin(eventId);
+  const { data: tournament } = await supabase
+    .from("football_tournaments")
+    .select("name")
+    .eq("id", tournamentId)
+    .eq("event_id", eventId)
+    .maybeSingle();
+
+  if (!tournament) {
+    fail(eventId, null, "Tournament not found");
+  }
+
+  const { error } = await supabase
+    .from("football_tournaments")
+    .delete()
+    .eq("id", tournamentId)
+    .eq("event_id", eventId);
+
+  if (error) {
+    fail(eventId, tournamentId, error.message);
+  }
+
+  await revalidateFootballPages(eventId);
+  redirect(
+    footballAdminPath(eventId, null, {
+      message: `${tournament.name} deleted`,
+    }),
+  );
+}
+
 export async function addFootballMatch(formData: FormData) {
   const eventId = getEventId(formData);
   const tournamentId = getTournamentId(formData);

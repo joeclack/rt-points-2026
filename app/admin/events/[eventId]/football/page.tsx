@@ -11,6 +11,7 @@ import { redirect } from "next/navigation";
 import { addFootballMatch } from "@/app/admin/events/[eventId]/football/actions";
 import { AdminFootballMatchCard } from "@/components/admin-football-match-card";
 import { AdminFootballTournamentForm } from "@/components/admin-football-tournament-form";
+import { DeleteFootballTournamentButton } from "@/components/delete-football-tournament-button";
 import { FootballAdminRealtimeRefresh } from "@/components/football-admin-realtime-refresh";
 import { FootballBracket } from "@/components/football-bracket";
 import { FootballStandings } from "@/components/football-standings";
@@ -205,7 +206,15 @@ export default async function AdminEventFootballPage({
                       {tournamentTeams.length} teams · {matches.length} matches
                     </p>
                   </div>
-                  <Trophy className="h-10 w-10 text-brand-orange" />
+                  <div className="flex items-center gap-3">
+                    <DeleteFootballTournamentButton
+                      eventId={event.id}
+                      matchCount={matches.length}
+                      tournamentId={selectedTournament.id}
+                      tournamentName={selectedTournament.name}
+                    />
+                    <Trophy className="h-10 w-10 text-brand-orange" />
+                  </div>
                 </div>
               </section>
 
