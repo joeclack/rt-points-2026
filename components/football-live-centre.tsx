@@ -190,7 +190,7 @@ function TeamDetailPanel({ team }: { team: Team }) {
   const leader = players[0];
 
   return (
-    <section className="min-w-0 rounded-lg border border-slate-200 bg-white">
+    <section className="min-w-0">
       <div className="flex min-w-0 items-center gap-3 border-b border-slate-100 px-4 py-4">
         <TeamBadge
           badge={team.badge}
@@ -273,13 +273,18 @@ function MatchDetailDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <section className="mb-5 rounded-xl bg-brand-charcoal px-4 py-5 text-white sm:px-6">
+          <section
+            className="mb-5 rounded-xl bg-brand-charcoal px-4 py-5 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14)] sm:px-6"
+            style={{
+              backgroundImage: `linear-gradient(115deg, rgba(15, 18, 22, 0.18), rgba(15, 18, 22, 0.08)), linear-gradient(110deg, ${homeTeam.colour} 0%, ${homeTeam.colour} 14%, ${awayTeam.colour} 86%, ${awayTeam.colour} 100%)`,
+            }}
+          >
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
               <div className="min-w-0 text-center">
                 <TeamBadge
                   badge={homeTeam.badge}
                   badgeUrl={homeTeam.badgeUrl}
-                  className="mx-auto h-14 w-14 text-lg"
+                  className="mx-auto h-14 w-14 border-2 border-white/70 text-lg shadow-[0_0_0_1px_rgba(15,23,42,0.2)]"
                   colour={homeTeam.colour}
                   name={homeTeam.name}
                 />
@@ -303,7 +308,7 @@ function MatchDetailDialog({
                 <TeamBadge
                   badge={awayTeam.badge}
                   badgeUrl={awayTeam.badgeUrl}
-                  className="mx-auto h-14 w-14 text-lg"
+                  className="mx-auto h-14 w-14 border-2 border-white/70 text-lg shadow-[0_0_0_1px_rgba(15,23,42,0.2)]"
                   colour={awayTeam.colour}
                   name={awayTeam.name}
                 />
@@ -314,33 +319,13 @@ function MatchDetailDialog({
             </div>
           </section>
 
-          <div className="mb-5 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
-              <p className="flex items-center gap-2 text-xs font-semibold uppercase text-slate-500">
+          <div className="mb-5 border-y border-slate-200 text-sm">
+            <div className="flex items-center justify-between gap-4 py-2.5">
+              <p className="flex items-center gap-2 font-semibold uppercase text-slate-500">
                 <Clock3 className="h-4 w-4" />
                 Length
               </p>
-              <p className="mt-1 text-lg font-semibold text-slate-950">
-                {matchMinutes} minutes
-              </p>
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
-              <p className="flex items-center gap-2 text-xs font-semibold uppercase text-slate-500">
-                <CalendarClock className="h-4 w-4" />
-                Kickoff
-              </p>
-              <p className="mt-1 text-lg font-semibold text-slate-950">
-                {formatKickoff(match.kickoffAt)}
-              </p>
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
-              <p className="flex items-center gap-2 text-xs font-semibold uppercase text-slate-500">
-                <MapPin className="h-4 w-4" />
-                Pitch
-              </p>
-              <p className="mt-1 text-lg font-semibold text-slate-950">
-                {match.venue ?? "TBC"}
-              </p>
+              <p className="font-semibold text-slate-950">{matchMinutes} minutes</p>
             </div>
           </div>
 
@@ -348,7 +333,7 @@ function MatchDetailDialog({
             <Users className="h-4 w-4 text-slate-500" />
             Team info
           </div>
-          <div className="grid flex-1 gap-4 lg:grid-cols-2">
+          <div className="grid flex-1 divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-white sm:grid-cols-2 sm:divide-x sm:divide-y-0">
             <TeamDetailPanel team={homeTeam} />
             <TeamDetailPanel team={awayTeam} />
           </div>
