@@ -117,3 +117,69 @@ export function createKnockoutFixtures(
   return fixtures;
 }
 
+export function createSevenTeamGroupKnockoutFixtures(
+  tournamentId: string,
+  eventId: string,
+  teamIds: string[],
+): FootballFixtureInsert[] {
+  const [groupA, groupB] = [teamIds.slice(0, 4), teamIds.slice(4, 7)];
+  const fixtures: FootballFixtureInsert[] = [];
+  const groupAFixtures = createRoundRobinFixtures(
+    tournamentId,
+    eventId,
+    groupA,
+  );
+  const groupBFixtures = createRoundRobinFixtures(
+    tournamentId,
+    eventId,
+    groupB,
+  );
+  const groupRoundCount = Math.max(
+    ...groupAFixtures.map((fixture) => fixture.round_number),
+    ...groupBFixtures.map((fixture) => fixture.round_number),
+  );
+  const finalId = randomUUID();
+  const semiFinalIds = [randomUUID(), randomUUID()];
+
+  fixtures.push(
+    ...groupAFixtures.map((fixture) => ({
+      ...fixture,
+      position: fixture.position,
+    })),
+    ...groupBFixtures.map((fixture) => ({
+      ...fixture,
+      position: groupAFixtures.length + fixture.position,
+    })),
+  );
+
+  semiFinalIds.forEach((matchId, matchIndex) => {
+    fixtures.push({
+      id: matchId,
+      tournament_id: tournamentId,
+      event_id: eventId,
+      home_team_id: null,
+      away_team_id: null,
+      stage: "semi_final",
+      round_number: groupRoundCount + 1,
+      position: matchIndex + 1,
+      next_match_id: finalId,
+      next_match_slot: matchIndex === 0 ? "home" : "away",
+    });
+  });
+
+  fixtures.push({
+    id: finalId,
+    tournament_id: tournamentId,
+    event_id: eventId,
+    home_team_id: null,
+    away_team_id: null,
+    stage: "final",
+    round_number: groupRoundCount + 2,
+    position: 1,
+    next_match_id: null,
+    next_match_slot: null,
+  });
+
+  return fixtures;
+}
+

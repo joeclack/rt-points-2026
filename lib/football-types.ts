@@ -1,6 +1,6 @@
 import type { Team } from "@/lib/sample-data";
 
-export type FootballTournamentFormat = "league" | "knockout";
+export type FootballTournamentFormat = "league" | "knockout" | "group_knockout";
 export type FootballTournamentStatus = "scheduled" | "live" | "completed";
 export type FootballKnockoutStage =
   | "quarter_final"

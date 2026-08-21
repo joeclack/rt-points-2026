@@ -1,6 +1,6 @@
 "use client";
 
-import { Brackets, Check, Clock3, ListOrdered } from "lucide-react";
+import { Brackets, Check, Clock3, ListOrdered, Trophy } from "lucide-react";
 import { type FormEvent, useMemo, useState } from "react";
 
 import { createFootballTournament } from "@/app/admin/events/[eventId]/football/actions";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import {
   footballStageLabels,
   type FootballKnockoutStage,
+  type FootballTournamentFormat,
 } from "@/lib/football-types";
 import { cn } from "@/lib/utils";
 import type { Team } from "@/lib/sample-data";
@@ -19,6 +20,7 @@ type PreviewMatch = {
   homeLabel: string;
   position: number;
   roundNumber: number;
+  sectionLabel: string;
   stage: "league" | FootballKnockoutStage;
 };
 
@@ -72,6 +74,7 @@ function createLeaguePreview(teamIds: string[], teamNames: Map<string, string>) 
           homeLabel: teamNames.get(homeTeamId) ?? "Team",
           position,
           roundNumber: roundIndex + 1,
+          sectionLabel: `Round ${roundIndex + 1}`,
           stage: "league",
         });
         position += 1;
@@ -112,6 +115,7 @@ function createKnockoutPreview(
           homeLabel: teamNames.get(homeTeamId) ?? "Team",
           position,
           roundNumber: roundIndex + 1,
+          sectionLabel: footballStageLabels[stage],
           stage,
         });
       } else {
@@ -125,6 +129,7 @@ function createKnockoutPreview(
           homeLabel: `Winner ${previousStageLabel} ${homeSource}`,
           position,
           roundNumber: roundIndex + 1,
+          sectionLabel: footballStageLabels[stage],
           stage,
         });
       }
@@ -132,6 +137,56 @@ function createKnockoutPreview(
   });
 
   return matches;
+}
+
+function createSevenTeamGroupKnockoutPreview(
+  teamIds: string[],
+  teamNames: Map<string, string>,
+) {
+  const groupA = teamIds.slice(0, 4);
+  const groupB = teamIds.slice(4, 7);
+  const groupAMatches = createLeaguePreview(groupA, teamNames).map((match) => ({
+    ...match,
+    sectionLabel: `Group A · Round ${match.roundNumber}`,
+  }));
+  const groupBMatches = createLeaguePreview(groupB, teamNames).map((match) => ({
+    ...match,
+    position: groupAMatches.length + match.position,
+    sectionLabel: `Group B · Round ${match.roundNumber}`,
+  }));
+  const groupRoundCount = Math.max(
+    ...groupAMatches.map((match) => match.roundNumber),
+    ...groupBMatches.map((match) => match.roundNumber),
+  );
+
+  return [
+    ...groupAMatches,
+    ...groupBMatches,
+    {
+      awayLabel: "Group B runner-up",
+      homeLabel: "Group A winner",
+      position: 1,
+      roundNumber: groupRoundCount + 1,
+      sectionLabel: "Semi-finals",
+      stage: "semi_final",
+    },
+    {
+      awayLabel: "Group A runner-up",
+      homeLabel: "Group B winner",
+      position: 2,
+      roundNumber: groupRoundCount + 1,
+      sectionLabel: "Semi-finals",
+      stage: "semi_final",
+    },
+    {
+      awayLabel: "Winner Semi-final 2",
+      homeLabel: "Winner Semi-final 1",
+      position: 1,
+      roundNumber: groupRoundCount + 2,
+      sectionLabel: "Final",
+      stage: "final",
+    },
+  ] satisfies PreviewMatch[];
 }
 
 export function AdminFootballTournamentForm({
@@ -143,7 +198,8 @@ export function AdminFootballTournamentForm({
   matchMinutes: number;
   teams: Team[];
 }) {
-  const [format, setFormat] = useState<"league" | "knockout">("league");
+  const [format, setFormat] =
+    useState<FootballTournamentFormat>("group_knockout");
   const [selectedTeamIds, setSelectedTeamIds] = useState(() =>
     teams.map((team) => team.id),
   );
@@ -179,32 +235,47 @@ export function AdminFootballTournamentForm({
         return [];
       }
 
-      if (format === "knockout" && selectedTeamIds.length !== requiredTeamCount) {
+      if (
+        format === "knockout" &&
+        selectedTeamIds.length !== requiredTeamCount
+      ) {
+        return [];
+      }
+
+      if (format === "group_knockout" && selectedTeamIds.length !== 7) {
         return [];
       }
 
       return format === "league"
         ? createLeaguePreview(selectedTeamIds, teamNames)
-        : createKnockoutPreview(selectedTeamIds, teamNames, startStage);
+        : format === "group_knockout"
+          ? createSevenTeamGroupKnockoutPreview(selectedTeamIds, teamNames)
+          : createKnockoutPreview(selectedTeamIds, teamNames, startStage);
     },
     [format, selectedTeamIds, startStage, teamNames, requiredTeamCount],
   );
   const previewRounds = useMemo(
     () =>
-      [...new Set(previewMatches.map((match) => match.roundNumber))].map(
-        (roundNumber) => ({
+      [...new Set(previewMatches.map((match) => match.sectionLabel))].map(
+        (sectionLabel) => ({
           matches: previewMatches.filter(
-            (match) => match.roundNumber === roundNumber,
+            (match) => match.sectionLabel === sectionLabel,
           ),
-          roundNumber,
+          sectionLabel,
         }),
       ),
     [previewMatches],
   );
   const knockoutTeamCountIsValid =
-    format === "league" || selectedTeamIds.length === requiredTeamCount;
+    format !== "knockout" || selectedTeamIds.length === requiredTeamCount;
+  const groupKnockoutTeamCountIsValid =
+    format !== "group_knockout" || selectedTeamIds.length === 7;
   const hasEnoughTeams = selectedTeamIds.length >= 2;
   const totalMatchMinutes = previewMatches.length * matchMinutes;
+  const previewRoundCount =
+    previewMatches.length === 0
+      ? 0
+      : Math.max(...previewMatches.map((match) => match.roundNumber));
 
   return (
     <form
@@ -230,7 +301,31 @@ export function AdminFootballTournamentForm({
         <legend className="text-sm font-semibold text-slate-800">
           Tournament type
         </legend>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-3">
+          <label
+            className={cn(
+              "cursor-pointer rounded-lg border-2 p-4 transition",
+              format === "group_knockout"
+                ? "border-brand-orange bg-brand-orange/10"
+                : "border-slate-200 bg-white hover:border-slate-300",
+            )}
+          >
+            <input
+              checked={format === "group_knockout"}
+              className="sr-only"
+              name="format"
+              onChange={() => setFormat("group_knockout")}
+              type="radio"
+              value="group_knockout"
+            />
+            <Trophy className="h-5 w-5 text-brand-orange-dark" />
+            <span className="mt-3 block font-semibold text-slate-950">
+              Groups + knockout
+            </span>
+            <span className="mt-1 block text-sm text-slate-600">
+              Seven teams, two groups, semi-finals and final.
+            </span>
+          </label>
           <label
             className={cn(
               "cursor-pointer rounded-lg border-2 p-4 transition",
@@ -322,7 +417,8 @@ export function AdminFootballTournamentForm({
           Football teams
         </legend>
         <p className="text-sm text-slate-500">
-          Teams are seeded for knockout matches in the order shown.
+          Teams are seeded in the order shown. For Groups + knockout, the first
+          four teams go into Group A and the next three go into Group B.
         </p>
         <div className="grid gap-2 sm:grid-cols-2">
           {teams.map((team) => (
@@ -382,7 +478,7 @@ export function AdminFootballTournamentForm({
                 {pluralise(previewMatches.length, "fixture")}
               </span>
               <span className="rounded-full bg-slate-100 px-3 py-1">
-                {pluralise(previewRounds.length, "round")}
+                {pluralise(previewRoundCount, "round")}
               </span>
               <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1">
                 <Clock3 className="h-3.5 w-3.5" />
@@ -404,20 +500,26 @@ export function AdminFootballTournamentForm({
               : `${selectedTeamIds.length - requiredTeamCount} fewer`}{" "}
             to preview a valid bracket.
           </p>
+        ) : !groupKnockoutTeamCountIsValid ? (
+          <p className="px-4 py-5 text-sm text-red-700">
+            Groups + knockout needs exactly 7 teams. Select{" "}
+            {7 - selectedTeamIds.length > 0
+              ? `${7 - selectedTeamIds.length} more`
+              : `${selectedTeamIds.length - 7} fewer`}{" "}
+            to preview the group fixtures, semi-finals and final.
+          </p>
         ) : (
           <div className="grid gap-4 p-4 lg:grid-cols-2">
-            {previewRounds.map((round) => (
+            {previewRounds.map((section) => (
               <div
                 className="rounded-md border border-slate-200 bg-white"
-                key={round.roundNumber}
+                key={section.sectionLabel}
               >
                 <div className="border-b border-slate-200 px-3 py-2 text-xs font-bold uppercase text-slate-500">
-                  {format === "league"
-                    ? `Round ${round.roundNumber}`
-                    : footballStageLabels[round.matches[0].stage]}
+                  {section.sectionLabel}
                 </div>
                 <ol className="divide-y divide-slate-100">
-                  {round.matches.map((match) => (
+                  {section.matches.map((match) => (
                     <li
                       className="grid grid-cols-[2rem_1fr] gap-2 px-3 py-2 text-sm"
                       key={`${match.roundNumber}-${match.position}`}

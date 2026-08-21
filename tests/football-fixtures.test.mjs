@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   createKnockoutFixtures,
   createRoundRobinFixtures,
+  createSevenTeamGroupKnockoutFixtures,
 } from "../lib/football-fixtures.ts";
 
 function pairingKey(match) {
@@ -103,5 +104,34 @@ test("final-only bracket creates one seeded match", () => {
   assert.equal(fixtures[0].home_team_id, "home");
   assert.equal(fixtures[0].away_team_id, "away");
   assert.equal(fixtures[0].next_match_id, null);
+});
+
+test("seven-team group knockout creates group games, semis and a final", () => {
+  const fixtures = createSevenTeamGroupKnockoutFixtures(
+    "tournament",
+    "event",
+    ["1", "2", "3", "4", "5", "6", "7"],
+  );
+  const groupMatches = fixtures.filter((fixture) => fixture.stage === "league");
+  const semiFinals = fixtures.filter(
+    (fixture) => fixture.stage === "semi_final",
+  );
+  const finals = fixtures.filter((fixture) => fixture.stage === "final");
+
+  assert.equal(fixtures.length, 12);
+  assert.equal(groupMatches.length, 9);
+  assert.equal(semiFinals.length, 2);
+  assert.equal(finals.length, 1);
+  assert.ok(
+    semiFinals.every(
+      (fixture) => !fixture.home_team_id && !fixture.away_team_id,
+    ),
+  );
+  assert.ok(
+    semiFinals.every(
+      (fixture) => fixture.next_match_id === finals[0].id,
+    ),
+  );
+  assert.equal(finals[0].round_number, 5);
 });
 

@@ -1,6 +1,7 @@
 import type {
   FootballMatch,
   FootballTournament,
+  FootballTournamentFormat,
 } from "@/lib/football-types";
 import { isSupabaseConfigured } from "@/lib/auth";
 import { getEventBySlug, sampleTeams } from "@/lib/sample-data";
@@ -10,7 +11,7 @@ type TournamentRow = {
   id: string;
   event_id: string;
   name: string;
-  format: "league" | "knockout";
+  format: FootballTournamentFormat;
   start_stage: "quarter_final" | "semi_final" | "final" | null;
   status: "scheduled" | "live" | "completed";
   win_points: number;

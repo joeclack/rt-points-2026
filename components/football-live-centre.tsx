@@ -27,12 +27,19 @@ import {
   isLiveFootballMatch,
   type FootballMatch,
   type FootballTournament,
+  type FootballTournamentFormat,
 } from "@/lib/football-types";
 import type { Team } from "@/lib/sample-data";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 const INITIAL_VISIBLE_MATCHES = 4;
+
+const footballFormatLabels: Record<FootballTournamentFormat, string> = {
+  group_knockout: "Groups + Knockout",
+  knockout: "Knockout",
+  league: "League",
+};
 
 type FootballLiveCentreProps = {
   accessCode: string;
@@ -49,7 +56,7 @@ type PublicFootballPayload = {
     id: string;
     event_id: string;
     name: string;
-    format: "league" | "knockout";
+    format: FootballTournamentFormat;
     start_stage: "quarter_final" | "semi_final" | "final" | null;
     status: "scheduled" | "live" | "completed";
     win_points: number;
@@ -641,7 +648,7 @@ export function FootballLiveCentre({
                   ) : (
                     <Trophy className="h-3.5 w-3.5" />
                   )}
-                  {tournament.format === "league" ? "League" : "Knockout"}
+                  {footballFormatLabels[tournament.format]}
                 </div>
                 <h2 className="mt-1 truncate text-2xl font-semibold text-slate-950">
                   {tournament.name}

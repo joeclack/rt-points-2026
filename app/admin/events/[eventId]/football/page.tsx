@@ -27,6 +27,13 @@ import { Input } from "@/components/ui/input";
 import { requireAdminUser } from "@/lib/auth";
 import { getAdminEventById } from "@/lib/events";
 import { getAdminFootballTournaments } from "@/lib/football";
+import type { FootballTournamentFormat } from "@/lib/football-types";
+
+const footballFormatLabels: Record<FootballTournamentFormat, string> = {
+  group_knockout: "Groups + knockout",
+  knockout: "Knockout cup",
+  league: "League table",
+};
 
 export default async function AdminEventFootballPage({
   params,
@@ -188,9 +195,7 @@ export default async function AdminEventFootballPage({
                         {selectedTournament.status}
                       </StatusPill>
                       <span className="text-xs font-bold uppercase tracking-wider text-brand-orange">
-                        {selectedTournament.format === "league"
-                          ? "League table"
-                          : "Knockout cup"}
+                        {footballFormatLabels[selectedTournament.format]}
                       </span>
                     </div>
                     <h2 className="mt-3 text-2xl font-black">

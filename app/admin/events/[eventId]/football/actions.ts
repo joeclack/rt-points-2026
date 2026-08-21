@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import {
   createKnockoutFixtures,
   createRoundRobinFixtures,
+  createSevenTeamGroupKnockoutFixtures,
 } from "@/lib/football-fixtures";
 import type {
   FootballKnockoutStage,
@@ -133,7 +134,7 @@ export async function createFootballTournament(formData: FormData) {
     fail(eventId, null, "Tournament name is required");
   }
 
-  if (!["league", "knockout"].includes(format)) {
+  if (!["league", "knockout", "group_knockout"].includes(format)) {
     fail(eventId, null, "Choose a tournament type");
   }
 
@@ -160,6 +161,10 @@ export async function createFootballTournament(formData: FormData) {
     );
   }
 
+  if (format === "group_knockout" && teamIds.length !== 7) {
+    fail(eventId, null, "Groups + knockout needs exactly 7 teams");
+  }
+
   const { supabase } = await requireEventAdmin(eventId);
   const { data: validTeams, error: teamError } = await supabase
     .from("teams")
@@ -176,6 +181,8 @@ export async function createFootballTournament(formData: FormData) {
   const fixtures =
     format === "league"
       ? createRoundRobinFixtures(tournamentId, eventId, teamIds)
+      : format === "group_knockout"
+        ? createSevenTeamGroupKnockoutFixtures(tournamentId, eventId, teamIds)
       : createKnockoutFixtures(
           tournamentId,
           eventId,

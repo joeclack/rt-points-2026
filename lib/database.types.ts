@@ -322,7 +322,7 @@ export type Database = {
           id: string;
           event_id: string;
           name: string;
-          format: "league" | "knockout";
+          format: "league" | "knockout" | "group_knockout";
           start_stage: "quarter_final" | "semi_final" | "final" | null;
           status: "scheduled" | "live" | "completed";
           win_points: number;
@@ -336,7 +336,7 @@ export type Database = {
           id?: string;
           event_id: string;
           name: string;
-          format: "league" | "knockout";
+          format: "league" | "knockout" | "group_knockout";
           start_stage?: "quarter_final" | "semi_final" | "final" | null;
           status?: "scheduled" | "live" | "completed";
           win_points?: number;
@@ -350,7 +350,7 @@ export type Database = {
           id?: string;
           event_id?: string;
           name?: string;
-          format?: "league" | "knockout";
+          format?: "league" | "knockout" | "group_knockout";
           start_stage?: "quarter_final" | "semi_final" | "final" | null;
           status?: "scheduled" | "live" | "completed";
           win_points?: number;
@@ -787,7 +787,7 @@ export type Database = {
           p_tournament_id: string;
           p_event_id: string;
           p_name: string;
-          p_format: "league" | "knockout";
+          p_format: "league" | "knockout" | "group_knockout";
           p_start_stage: "quarter_final" | "semi_final" | "final" | null;
           p_game_minutes: number;
           p_team_ids: string[];
@@ -800,7 +800,7 @@ export type Database = {
           p_tournament_id: string;
           p_event_id: string;
           p_name: string;
-          p_format: "league" | "knockout";
+          p_format: "league" | "knockout" | "group_knockout";
           p_start_stage: "quarter_final" | "semi_final" | "final" | null;
           p_team_ids: string[];
           p_fixtures: Json;
