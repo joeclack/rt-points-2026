@@ -142,6 +142,7 @@ export default async function AdminEventFootballPage({
             <div className="border-t border-slate-200 p-5">
               <AdminFootballTournamentForm
                 eventId={event.id}
+                matchMinutes={event.footballMatchMinutes}
                 teams={event.teams}
               />
             </div>
