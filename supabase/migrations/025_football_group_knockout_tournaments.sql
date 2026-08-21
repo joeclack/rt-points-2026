@@ -88,8 +88,8 @@ begin
       raise exception 'The selected knockout round has the wrong number of teams';
     end if;
   elsif p_format = 'group_knockout' then
-    if cardinality(p_team_ids) <> 7 then
-      raise exception 'Groups + knockout needs exactly 7 teams';
+    if cardinality(p_team_ids) < 4 then
+      raise exception 'Groups + knockout needs at least 4 teams';
     end if;
     if p_start_stage is not null then
       raise exception 'Groups + knockout tournaments cannot have an opening knockout round';
@@ -183,6 +183,10 @@ declare
   v_a_runner_up uuid;
   v_b_winner uuid;
   v_b_runner_up uuid;
+  v_expected_group_matches integer;
+  v_group_a_size integer;
+  v_group_b_size integer;
+  v_team_count integer;
 begin
   if not exists (
     select 1
@@ -191,6 +195,21 @@ begin
   ) then
     return;
   end if;
+
+  select count(*)
+  into v_team_count
+  from public.football_tournament_teams
+  where tournament_id = p_tournament_id;
+
+  if v_team_count < 4 then
+    return;
+  end if;
+
+  v_group_a_size := ceil(v_team_count::numeric / 2)::integer;
+  v_group_b_size := v_team_count - v_group_a_size;
+  v_expected_group_matches :=
+    (v_group_a_size * (v_group_a_size - 1) / 2)
+    + (v_group_b_size * (v_group_b_size - 1) / 2);
 
   if (
     select count(*)
@@ -205,10 +224,16 @@ begin
       and matches.stage = 'league'
       and matches.status = 'full_time'
       and (
-        (home_seed.seed <= 4 and away_seed.seed <= 4)
-        or (home_seed.seed >= 5 and away_seed.seed >= 5)
+        (
+          home_seed.seed <= v_group_a_size
+          and away_seed.seed <= v_group_a_size
+        )
+        or (
+          home_seed.seed > v_group_a_size
+          and away_seed.seed > v_group_a_size
+        )
       )
-  ) < 9 then
+  ) < v_expected_group_matches then
     return;
   end if;
 
@@ -216,7 +241,7 @@ begin
     select
       team_id,
       seed,
-      case when seed <= 4 then 'A' else 'B' end as group_code
+      case when seed <= v_group_a_size then 'A' else 'B' end as group_code
     from public.football_tournament_teams
     where tournament_id = p_tournament_id
   ),

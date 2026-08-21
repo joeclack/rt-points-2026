@@ -4,9 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import {
+  createGroupKnockoutFixtures,
   createKnockoutFixtures,
   createRoundRobinFixtures,
-  createSevenTeamGroupKnockoutFixtures,
 } from "@/lib/football-fixtures";
 import type {
   FootballKnockoutStage,
@@ -161,8 +161,8 @@ export async function createFootballTournament(formData: FormData) {
     );
   }
 
-  if (format === "group_knockout" && teamIds.length !== 7) {
-    fail(eventId, null, "Groups + knockout needs exactly 7 teams");
+  if (format === "group_knockout" && teamIds.length < 4) {
+    fail(eventId, null, "Groups + knockout needs at least 4 teams");
   }
 
   const { supabase } = await requireEventAdmin(eventId);
@@ -182,7 +182,7 @@ export async function createFootballTournament(formData: FormData) {
     format === "league"
       ? createRoundRobinFixtures(tournamentId, eventId, teamIds)
       : format === "group_knockout"
-        ? createSevenTeamGroupKnockoutFixtures(tournamentId, eventId, teamIds)
+        ? createGroupKnockoutFixtures(tournamentId, eventId, teamIds)
       : createKnockoutFixtures(
           tournamentId,
           eventId,

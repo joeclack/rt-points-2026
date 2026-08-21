@@ -117,12 +117,16 @@ export function createKnockoutFixtures(
   return fixtures;
 }
 
-export function createSevenTeamGroupKnockoutFixtures(
+export function createGroupKnockoutFixtures(
   tournamentId: string,
   eventId: string,
   teamIds: string[],
 ): FootballFixtureInsert[] {
-  const [groupA, groupB] = [teamIds.slice(0, 4), teamIds.slice(4, 7)];
+  const groupASize = Math.ceil(teamIds.length / 2);
+  const [groupA, groupB] = [
+    teamIds.slice(0, groupASize),
+    teamIds.slice(groupASize),
+  ];
   const fixtures: FootballFixtureInsert[] = [];
   const groupAFixtures = createRoundRobinFixtures(
     tournamentId,

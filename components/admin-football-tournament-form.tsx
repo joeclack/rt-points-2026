@@ -139,12 +139,13 @@ function createKnockoutPreview(
   return matches;
 }
 
-function createSevenTeamGroupKnockoutPreview(
+function createGroupKnockoutPreview(
   teamIds: string[],
   teamNames: Map<string, string>,
 ) {
-  const groupA = teamIds.slice(0, 4);
-  const groupB = teamIds.slice(4, 7);
+  const groupASize = Math.ceil(teamIds.length / 2);
+  const groupA = teamIds.slice(0, groupASize);
+  const groupB = teamIds.slice(groupASize);
   const groupAMatches = createLeaguePreview(groupA, teamNames).map((match) => ({
     ...match,
     sectionLabel: `Group A · Round ${match.roundNumber}`,
@@ -242,14 +243,14 @@ export function AdminFootballTournamentForm({
         return [];
       }
 
-      if (format === "group_knockout" && selectedTeamIds.length !== 7) {
+      if (format === "group_knockout" && selectedTeamIds.length < 4) {
         return [];
       }
 
       return format === "league"
         ? createLeaguePreview(selectedTeamIds, teamNames)
         : format === "group_knockout"
-          ? createSevenTeamGroupKnockoutPreview(selectedTeamIds, teamNames)
+          ? createGroupKnockoutPreview(selectedTeamIds, teamNames)
           : createKnockoutPreview(selectedTeamIds, teamNames, startStage);
     },
     [format, selectedTeamIds, startStage, teamNames, requiredTeamCount],
@@ -269,7 +270,7 @@ export function AdminFootballTournamentForm({
   const knockoutTeamCountIsValid =
     format !== "knockout" || selectedTeamIds.length === requiredTeamCount;
   const groupKnockoutTeamCountIsValid =
-    format !== "group_knockout" || selectedTeamIds.length === 7;
+    format !== "group_knockout" || selectedTeamIds.length >= 4;
   const hasEnoughTeams = selectedTeamIds.length >= 2;
   const totalMatchMinutes = previewMatches.length * matchMinutes;
   const previewRoundCount =
@@ -323,7 +324,7 @@ export function AdminFootballTournamentForm({
               Groups + knockout
             </span>
             <span className="mt-1 block text-sm text-slate-600">
-              Seven teams, two groups, semi-finals and final.
+              Split teams into two groups, then semi-finals and final.
             </span>
           </label>
           <label
@@ -418,7 +419,7 @@ export function AdminFootballTournamentForm({
         </legend>
         <p className="text-sm text-slate-500">
           Teams are seeded in the order shown. For Groups + knockout, the first
-          four teams go into Group A and the next three go into Group B.
+          half go into Group A and the rest go into Group B.
         </p>
         <div className="grid gap-2 sm:grid-cols-2">
           {teams.map((team) => (
@@ -502,10 +503,8 @@ export function AdminFootballTournamentForm({
           </p>
         ) : !groupKnockoutTeamCountIsValid ? (
           <p className="px-4 py-5 text-sm text-red-700">
-            Groups + knockout needs exactly 7 teams. Select{" "}
-            {7 - selectedTeamIds.length > 0
-              ? `${7 - selectedTeamIds.length} more`
-              : `${selectedTeamIds.length - 7} fewer`}{" "}
+            Groups + knockout needs at least 4 teams. Select{" "}
+            {4 - selectedTeamIds.length} more{" "}
             to preview the group fixtures, semi-finals and final.
           </p>
         ) : (
