@@ -19,7 +19,7 @@ export function TeamBadge({
     <span
       aria-label={`${name} badge`}
       className={cn(
-        "flex items-center justify-center rounded-md bg-cover bg-center font-bold text-white",
+        "flex items-center justify-center overflow-hidden rounded-full bg-cover bg-center font-bold text-white",
         className,
       )}
       style={{
