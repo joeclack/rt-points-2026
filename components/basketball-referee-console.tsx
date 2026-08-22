@@ -8,6 +8,7 @@ import {
   Flag,
   Minimize,
   Play,
+  Timer,
   Wifi,
   WifiOff,
 } from "lucide-react";
@@ -164,6 +165,24 @@ function ScoreSide({
   );
 }
 
+function formatMatchTimer(
+  startedAt: string | null,
+  gameMinutes: number,
+  now: number | null,
+) {
+  if (!startedAt || !now) {
+    return `${gameMinutes}:00`;
+  }
+
+  const elapsed = Math.max(
+    0,
+    Math.floor((now - new Date(startedAt).getTime()) / 1000),
+  );
+  const remaining = Math.max(0, gameMinutes * 60 - elapsed);
+
+  return `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, "0")}`;
+}
+
 export function BasketballRefereeConsole({
   error,
   eventId,
@@ -190,6 +209,7 @@ export function BasketballRefereeConsole({
   const [isOnline, setIsOnline] = useState(true);
   const [wakeLockActive, setWakeLockActive] = useState(false);
   const [scorePending, setScorePending] = useState(false);
+  const [clockNow, setClockNow] = useState<number | null>(null);
   const [scores, setScores] = useState({
     away: match.awayScore,
     home: match.homeScore,
@@ -211,6 +231,23 @@ export function BasketballRefereeConsole({
   useEffect(() => {
     setScores({ away: match.awayScore, home: match.homeScore });
   }, [match.awayScore, match.homeScore]);
+
+  useEffect(() => {
+    if (match.status === "scheduled") {
+      setClockNow(null);
+      return;
+    }
+
+    const tick = () => setClockNow(Date.now());
+    tick();
+
+    if (match.status !== "live") {
+      return;
+    }
+
+    const interval = window.setInterval(tick, 1000);
+    return () => window.clearInterval(interval);
+  }, [match.startedAt, match.status]);
 
   useEffect(() => {
     const updateConnection = () => setIsOnline(navigator.onLine);
@@ -417,9 +454,13 @@ export function BasketballRefereeConsole({
           <p className="mt-2 font-mono text-7xl font-bold leading-none tabular-nums text-[#d9ff43]">
             {scores.home}-{scores.away}
           </p>
-          <p className="mt-2 text-xs font-semibold text-zinc-500">
-            {gameMinutes} minute game
-          </p>
+          <div className="mt-3 flex items-center justify-center gap-2 text-zinc-400">
+            <Timer className="h-4 w-4" />
+            <span className="font-mono text-xl font-bold tabular-nums text-white">
+              {formatMatchTimer(match.startedAt, gameMinutes, clockNow)}
+            </span>
+            <span className="text-xs font-semibold uppercase">Timer</span>
+          </div>
         </section>
 
         <section className="grid grid-cols-[1fr_auto_1fr] items-start border-b border-zinc-800">
