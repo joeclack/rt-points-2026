@@ -3,9 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { createKnockoutFixtures, createRoundRobinFixtures } from "@/lib/football-fixtures";
+import { createRoundRobinFixtures } from "@/lib/football-fixtures";
+import {
+  createBasketballKnockoutFixtures,
+  getBasketballKnockoutStartStage,
+} from "@/lib/basketball-fixtures";
 import type { BasketballStage } from "@/lib/basketball-types";
-import type { FootballKnockoutStage } from "@/lib/football-types";
 import type { Json } from "@/lib/database.types";
 import { createClient } from "@/lib/supabase/server";
 
@@ -35,30 +38,29 @@ async function refresh(eventId: string, slug: string) {
 export async function createBasketballTournament(formData: FormData) {
   const eventId = text(formData, "event_id"); const name = text(formData, "name");
   const format = text(formData, "format") as "league" | "knockout";
-  const startStage = text(formData, "start_stage") as FootballKnockoutStage;
   const gameMinutes = Number(text(formData, "game_minutes"));
   const teamIds = [...new Set(formData.getAll("team_ids").map(String).filter(Boolean))];
+  const startStage = format === "knockout" ? getBasketballKnockoutStartStage(teamIds.length) : null;
   if (!eventId) redirect("/admin/events");
   if (!name) fail(eventId, null, "Tournament name is required");
   if (!["league", "knockout"].includes(format)) fail(eventId, null, "Choose a format");
   if (!Number.isInteger(gameMinutes) || gameMinutes < 1 || gameMinutes > 60) fail(eventId, null, "Game length must be between 1 and 60 minutes");
   if (teamIds.length < 2) fail(eventId, null, "Choose at least two teams");
-  const counts: Record<FootballKnockoutStage, number> = { quarter_final: 8, semi_final: 4, final: 2 };
-  if (format === "knockout" && teamIds.length !== counts[startStage]) fail(eventId, null, `This knockout round needs exactly ${counts[startStage] ?? 2} teams`);
   const { supabase, slug } = await requireAdmin(eventId);
   const { data: validTeams } = await supabase.from("teams").select("id").eq("event_id", eventId).in("id", teamIds);
   if (validTeams?.length !== teamIds.length) fail(eventId, null, "One or more teams are invalid");
   const creationId = text(formData, "creation_id");
   const tournamentId = creationId || crypto.randomUUID();
-  const base = format === "league" ? createRoundRobinFixtures(tournamentId, eventId, teamIds) : createKnockoutFixtures(tournamentId, eventId, teamIds, startStage);
-  const fixtures = base.map(({ id, tournament_id, event_id, home_team_id, away_team_id, stage, round_number, position, next_match_id, next_match_slot }) => ({ id, tournament_id, event_id, home_team_id, away_team_id, stage: stage === "round_of_16" ? "friendly" as const : stage, round_number, position, next_match_id, next_match_slot }));
+  const fixtures = format === "league"
+    ? createRoundRobinFixtures(tournamentId, eventId, teamIds).map(({ id, tournament_id, event_id, home_team_id, away_team_id, stage, round_number, position, next_match_id, next_match_slot }) => ({ id, tournament_id, event_id, home_team_id, away_team_id, stage: stage === "round_of_16" ? "friendly" as const : stage, round_number, position, next_match_id, next_match_slot }))
+    : createBasketballKnockoutFixtures(tournamentId, eventId, teamIds);
   const { error } = await supabase.rpc("create_basketball_tournament_atomic", {
     p_event_id: eventId,
     p_fixtures: fixtures as unknown as Json,
     p_format: format,
     p_game_minutes: gameMinutes,
     p_name: name,
-    p_start_stage: format === "knockout" ? startStage : null,
+    p_start_stage: startStage,
     p_team_ids: teamIds,
     p_tournament_id: tournamentId,
   });

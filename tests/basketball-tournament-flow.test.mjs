@@ -2,20 +2,19 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
-  createKnockoutFixtures,
   createRoundRobinFixtures,
 } from "../lib/football-fixtures.ts";
+import { createBasketballKnockoutFixtures } from "../lib/basketball-fixtures.ts";
 
 function createTournament(startStage, teamIds) {
   return {
     id: "tournament",
     eventId: "event",
     status: "scheduled",
-    matches: createKnockoutFixtures(
+    matches: createBasketballKnockoutFixtures(
       "tournament",
       "event",
       teamIds,
-      startStage,
     ).map((fixture) => ({
       id: fixture.id,
       homeTeamId: fixture.home_team_id,
@@ -273,6 +272,71 @@ test("quarter-final basketball bracket progresses through every round", () => {
 
   assert.equal(tournament.status, "completed");
   assert.equal(final.winnerTeamId, final.awayTeamId);
+});
+
+test("basketball knockout creates play-in games for more than eight teams", () => {
+  const tournament = createTournament("quarter_final", [
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine",
+    "ten",
+  ]);
+
+  assert.equal(tournament.matches.length, 9);
+  assert.equal(
+    tournament.matches.filter((match) => match.stage === "friendly").length,
+    2,
+  );
+  assert.equal(
+    tournament.matches.filter((match) => match.stage === "quarter_final").length,
+    4,
+  );
+
+  for (const match of tournament.matches
+    .filter((candidate) => candidate.roundNumber === 1)
+    .sort((a, b) => a.position - b.position)) {
+    playMatch(tournament, match, 2, 1);
+  }
+
+  assert.ok(
+    tournament.matches
+      .filter((match) => match.stage === "quarter_final")
+      .every((match) => match.homeTeamId && match.awayTeamId),
+  );
+});
+
+test("basketball knockout supports multiple preliminary rounds", () => {
+  const teamIds = Array.from({ length: 17 }, (_, index) => `team-${index + 1}`);
+  const tournament = createTournament("quarter_final", teamIds);
+
+  assert.equal(tournament.matches.length, 16);
+  assert.equal(
+    tournament.matches.filter((match) => match.stage === "friendly").length,
+    9,
+  );
+
+  while (tournament.status !== "completed") {
+    const nextMatch = tournament.matches
+      .filter(
+        (match) =>
+          match.status === "scheduled" &&
+          match.homeTeamId &&
+          match.awayTeamId,
+      )
+      .sort((a, b) => a.roundNumber - b.roundNumber || a.position - b.position)[0];
+
+    assert.ok(nextMatch, "expected a playable knockout game");
+    playMatch(tournament, nextMatch, 2, 1);
+  }
+
+  assert.equal(tournament.status, "completed");
+  assert.ok(findMatch(tournament, "final")?.winnerTeamId);
 });
 
 test("round-robin basketball tournament completes after every game finishes", () => {
