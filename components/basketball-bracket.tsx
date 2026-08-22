@@ -72,7 +72,7 @@ function BracketTeam({
         </span>
       )}
       <span
-        className={`min-w-0 flex-1 truncate text-sm font-semibold ${
+        className={`min-w-0 flex-1 break-words text-sm font-semibold leading-tight ${
           team ? "text-slate-800" : "text-slate-500"
         }`}
       >
@@ -167,24 +167,24 @@ export function BasketballBracket({
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-4 sm:p-5">
-      <div className="mb-4 flex items-end justify-between gap-3">
+      <div className="mb-4 flex flex-col items-start gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
         <div>
           <h2 className="text-base font-semibold text-slate-950">
             Tournament timeline
           </h2>
           <p className="mt-1 text-xs text-slate-500">
-            Every knockout game is shown. Winners are placed into the next slot immediately after the result is confirmed.
+            All rounds stay visible. Winners move forward as soon as results are confirmed.
           </p>
         </div>
-        <span className="shrink-0 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">
-          Scroll horizontally
+        <span className="shrink-0 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400 sm:pb-0.5">
+          Swipe across
         </span>
       </div>
       <div className="overflow-x-auto pb-2">
         <div className="flex min-w-max items-stretch gap-3">
           {rounds.map((round, index) => (
             <div className="flex items-stretch gap-3" key={round.roundNumber}>
-              <section className="flex w-72 flex-col">
+            <section className="flex w-[min(18rem,calc(100vw-3rem))] shrink-0 flex-col sm:w-72">
                 <h3 className="mb-3 text-xs font-semibold uppercase text-slate-500">
                   {round.matches.length > 0
                     ? basketballStageLabels[round.matches[0].stage]
