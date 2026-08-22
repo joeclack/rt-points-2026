@@ -69,11 +69,7 @@ async function managedMatch(formData: FormData) {
   const eventId = text(formData, "event_id"); const tournamentId = text(formData, "tournament_id"); const matchId = text(formData, "match_id");
   if (!eventId || !tournamentId || !matchId) redirect("/admin/events");
   const context = await requireAdmin(eventId);
-  const { data: match, error } = await context.supabase.from("basketball_matches").select("*").eq("id", matchId).eq("tournament_id", tournamentId).eq("event_id", eventId).single();
-  if (error || !match) fail(eventId, tournamentId, "Game not found");
-  const { data: tournament } = await context.supabase.from("basketball_tournaments").select("format").eq("id", tournamentId).single();
-  if (!tournament) fail(eventId, tournamentId, "Tournament not found");
-  return { ...context, eventId, tournamentId, match };
+  return { ...context, eventId, tournamentId, match: { id: matchId } };
 }
 
 function commandId(formData: FormData) {
@@ -110,7 +106,6 @@ export async function adjustBasketballScore(formData: FormData) {
     side,
   });
   if (error) fail(context.eventId, context.tournamentId, error.message);
-  await refresh(context.eventId, context.slug);
 }
 
 export async function updateBasketballSchedule(formData: FormData) {

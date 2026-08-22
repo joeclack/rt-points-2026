@@ -51,17 +51,11 @@ export function FootballAdminRealtimeRefresh({
         queueRefresh,
       )
       .subscribe();
-    const fallbackInterval = window.setInterval(
-      () => router.refresh(),
-      5000,
-    );
-
     return () => {
       if (refreshTimeout) {
         window.clearTimeout(refreshTimeout);
       }
 
-      window.clearInterval(fallbackInterval);
       void supabase.removeChannel(channel);
     };
   }, [eventId, router]);

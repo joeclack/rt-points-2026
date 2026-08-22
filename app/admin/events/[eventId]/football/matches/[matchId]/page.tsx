@@ -1,10 +1,9 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
 import { FootballAdminRealtimeRefresh } from "@/components/football-admin-realtime-refresh";
 import { FootballRefereeConsole } from "@/components/football-referee-console";
 import { requireAdminUser } from "@/lib/auth";
-import { getAdminEventById } from "@/lib/events";
-import { getAdminFootballTournaments } from "@/lib/football";
+import { getAdminFootballFocusedMatch } from "@/lib/football";
 
 export const metadata = {
   robots: { follow: false, index: false },
@@ -21,36 +20,28 @@ export default async function FocusedFootballMatchPage({
   const user = await requireAdminUser();
   const { eventId, matchId } = await params;
   const { error, message } = await searchParams;
-  const [event, tournaments] = await Promise.all([
-    getAdminEventById(eventId, user?.id),
-    getAdminFootballTournaments(eventId),
-  ]);
-
-  if (event.sport !== "football") {
-    redirect(`/admin/events/${eventId}/basketball`);
-  }
-
-  const tournament = tournaments.find((item) =>
-    item.matches.some((match) => match.id === matchId),
+  const focusedMatch = await getAdminFootballFocusedMatch(
+    eventId,
+    matchId,
+    user?.id,
   );
-  const match = tournament?.matches.find((item) => item.id === matchId);
 
-  if (!tournament || !match) {
+  if (!focusedMatch) {
     notFound();
   }
 
   return (
     <div>
-      <FootballAdminRealtimeRefresh eventId={event.id} />
+      <FootballAdminRealtimeRefresh eventId={focusedMatch.event.id} />
       <FootballRefereeConsole
         error={error}
-        eventId={event.id}
-        match={match}
-        matchMinutes={event.footballMatchMinutes}
+        eventId={focusedMatch.event.id}
+        match={focusedMatch.match}
+        matchMinutes={focusedMatch.event.footballMatchMinutes}
         message={message}
-        returnHref={`/admin/events/${event.id}/football?tournament=${tournament.id}`}
-        teams={event.teams}
-        tournamentName={tournament.name}
+        returnHref={`/admin/events/${focusedMatch.event.id}/football?tournament=${focusedMatch.match.tournamentId}`}
+        teams={focusedMatch.event.teams}
+        tournamentName={focusedMatch.tournamentName}
       />
     </div>
   );

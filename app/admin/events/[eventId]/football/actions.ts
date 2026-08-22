@@ -382,32 +382,7 @@ async function readManagedMatch(
   matchId: string,
 ) {
   const { supabase } = await requireEventAdmin(eventId);
-  const { data: match, error } = await supabase
-    .from("football_matches")
-    .select(
-      "id,tournament_id,event_id,home_team_id,away_team_id,status,home_score,away_score,next_match_id,next_match_slot,winner_team_id,second_half_started_at,stoppage_started_at,first_half_stoppage_seconds,second_half_stoppage_seconds,control_version,controller_device_id,controller_claimed_at",
-    )
-    .eq("id", matchId)
-    .eq("tournament_id", tournamentId)
-    .eq("event_id", eventId)
-    .single();
-
-  if (error || !match) {
-    fail(eventId, tournamentId, error?.message ?? "Match not found");
-  }
-
-  const { data: tournament } = await supabase
-    .from("football_tournaments")
-    .select("format")
-    .eq("id", tournamentId)
-    .eq("event_id", eventId)
-    .single();
-
-  if (!tournament) {
-    fail(eventId, tournamentId, "Tournament not found");
-  }
-
-  return { supabase, match, tournament };
+  return { supabase, match: { id: matchId } };
 }
 
 function getCommandId(formData: FormData) {
@@ -453,10 +428,6 @@ export async function adjustFootballMatchScore(formData: FormData) {
   };
   const context = await readManagedMatch(eventId, tournamentId, matchId);
 
-  if (!["live", "halftime"].includes(context.match.status)) {
-    failScore("Start or reopen the match to change its score");
-  }
-
   if (!["home", "away"].includes(side) || ![-1, 1].includes(delta)) {
     failScore("Score change is invalid");
   }
@@ -473,7 +444,6 @@ export async function adjustFootballMatchScore(formData: FormData) {
     failScore(error.message);
   }
 
-  await revalidateFootballPages(eventId);
 }
 
 export async function setFootballMatchScore(formData: FormData) {
@@ -493,10 +463,6 @@ export async function setFootballMatchScore(formData: FormData) {
     fail(eventId, tournamentId, message);
   };
   const context = await readManagedMatch(eventId, tournamentId, matchId);
-
-  if (!["live", "halftime"].includes(context.match.status)) {
-    failScore("Start or reopen the match to correct its score");
-  }
 
   if (
     !Number.isInteger(homeScore) ||

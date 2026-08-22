@@ -28,11 +28,8 @@ export function BasketballAdminRealtimeRefresh({ eventId }: { eventId: string })
       )
       .subscribe();
 
-    const fallback = window.setInterval(() => router.refresh(), 5000);
-
     return () => {
       if (refreshTimeout) window.clearTimeout(refreshTimeout);
-      window.clearInterval(fallback);
       void supabase.removeChannel(channel);
     };
   }, [eventId, router]);

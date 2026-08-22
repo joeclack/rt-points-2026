@@ -62,6 +62,28 @@ type AdminTournamentRow = TournamentRow & {
   matches: MatchRow[];
 };
 
+type FocusedMatchEventRow = {
+  role: "owner" | "admin";
+  events: {
+    id: string;
+    sport: "football" | "basketball";
+    football_match_minutes: number;
+    teams: Array<{
+      id: string;
+      name: string;
+      colour: string;
+      badge_text: string | null;
+      badge_url: string | null;
+    }>;
+  } | null;
+};
+
+type FocusedMatchRow = MatchRow & {
+  tournament: {
+    name: string;
+  } | null;
+};
+
 function mapMatch(row: MatchRow): FootballMatch {
   return {
     id: row.id,
@@ -218,6 +240,87 @@ export async function getAdminFootballTournaments(eventId: string) {
       ),
     ),
   );
+}
+
+export async function getAdminFootballFocusedMatch(
+  eventId: string,
+  matchId: string,
+  userId?: string,
+) {
+  if (!isSupabaseConfigured()) {
+    const sampleEvent = getEventBySlug("the-jesus-generation");
+    const tournament = getSampleFootballTournaments(eventId).find((item) =>
+      item.matches.some((match) => match.id === matchId),
+    );
+    const match = tournament?.matches.find((item) => item.id === matchId);
+
+    return tournament && match
+      ? {
+          event: sampleEvent,
+          match,
+          tournamentName: tournament.name,
+        }
+      : null;
+  }
+
+  const supabase = await createClient();
+  let adminUserId = userId;
+
+  if (!adminUserId) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    adminUserId = user?.id;
+  }
+
+  if (!adminUserId) {
+    return null;
+  }
+
+  const [{ data: membership }, { data: match, error: matchError }] =
+    await Promise.all([
+      supabase
+        .from("event_admins")
+        .select(
+          "role,events!inner(id,sport,football_match_minutes,teams(id,name,colour,badge_text,badge_url))",
+        )
+        .eq("event_id", eventId)
+        .eq("user_id", adminUserId)
+        .single(),
+      supabase
+        .from("football_matches")
+        .select(
+          "id,tournament_id,event_id,home_team_id,away_team_id,stage,round_number,position,kickoff_at,venue,status,home_score,away_score,winner_team_id,next_match_id,next_match_slot,started_at,second_half_started_at,stoppage_started_at,first_half_stoppage_seconds,second_half_stoppage_seconds,control_version,controller_device_id,controller_claimed_at,ended_at,updated_at,tournament:football_tournaments!inner(name)",
+        )
+        .eq("id", matchId)
+        .eq("event_id", eventId)
+        .single(),
+    ]);
+
+  const event = (membership as unknown as FocusedMatchEventRow | null)?.events;
+  const focusedMatch = match as unknown as FocusedMatchRow | null;
+
+  if (!event || event.sport !== "football" || matchError || !focusedMatch) {
+    return null;
+  }
+
+  return {
+    event: {
+      id: event.id,
+      footballMatchMinutes: event.football_match_minutes,
+      teams: event.teams.map((team) => ({
+        id: team.id,
+        name: team.name,
+        colour: team.colour,
+        badge: team.badge_text ?? team.name.charAt(0).toUpperCase(),
+        badgeUrl: team.badge_url,
+        players: [],
+      })),
+    },
+    match: mapMatch(focusedMatch),
+    tournamentName: focusedMatch.tournament?.name ?? "Football",
+  };
 }
 
 export async function getPublicFootballTournaments(
