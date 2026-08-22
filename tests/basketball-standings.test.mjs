@@ -45,10 +45,12 @@ test("basketball standings rank wins before point difference", () => {
   ]);
 });
 
-test("live and scheduled basketball games do not affect final standings", () => {
+test("unfinished and cancelled basketball games do not affect final standings", () => {
   const standings = calculateBasketballStandings(tournament([
     match({ status: "live", homeScore: 9, awayScore: 1 }),
     match({ status: "scheduled" }),
+    match({ status: "postponed", homeScore: 2, awayScore: 4 }),
+    match({ status: "cancelled", homeScore: 5, awayScore: 6 }),
   ]), teams);
 
   assert.ok(standings.every((row) => row.played === 0 && row.won === 0));
