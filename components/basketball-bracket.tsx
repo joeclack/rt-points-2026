@@ -167,18 +167,10 @@ export function BasketballBracket({
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-4 sm:p-5">
-      <div className="mb-4 flex flex-col items-start gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
-        <div>
-          <h2 className="text-base font-semibold text-slate-950">
-            Tournament timeline
-          </h2>
-          <p className="mt-1 text-xs text-slate-500">
-            All rounds stay visible. Winners move forward as soon as results are confirmed.
-          </p>
-        </div>
-        <span className="shrink-0 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400 sm:pb-0.5">
-          Swipe across
-        </span>
+      <div className="mb-4">
+        <h2 className="text-base font-semibold text-slate-950">
+          Tournament timeline
+        </h2>
       </div>
       <div className="overflow-x-auto pb-2">
         <div className="flex min-w-max items-stretch gap-3">
