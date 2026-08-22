@@ -35,6 +35,8 @@ export type BasketballMatch = {
   startedAt: string | null;
   endedAt: string | null;
   controlVersion: number;
+  controllerDeviceId: string | null;
+  controllerClaimedAt: string | null;
   updatedAt: string;
 };
 

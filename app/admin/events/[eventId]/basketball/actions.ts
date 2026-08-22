@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createKnockoutFixtures, createRoundRobinFixtures } from "@/lib/football-fixtures";
+import type { BasketballStage } from "@/lib/basketball-types";
 import type { FootballKnockoutStage } from "@/lib/football-types";
 import type { Json } from "@/lib/database.types";
 import { createClient } from "@/lib/supabase/server";
@@ -65,6 +66,90 @@ export async function createBasketballTournament(formData: FormData) {
   await refresh(eventId, slug); redirect(path(eventId, tournamentId, { message: `${name} created with ${fixtures.length} games` }));
 }
 
+export async function deleteBasketballTournament(formData: FormData) {
+  const eventId = text(formData, "event_id");
+  const tournamentId = text(formData, "tournament_id");
+  const confirm = text(formData, "confirm");
+  if (!eventId || !tournamentId) redirect("/admin/events");
+  if (confirm !== "DELETE") fail(eventId, tournamentId, "Type DELETE to remove a tournament");
+  const { supabase, slug } = await requireAdmin(eventId);
+  const { data: tournament } = await supabase
+    .from("basketball_tournaments")
+    .select("name")
+    .eq("id", tournamentId)
+    .eq("event_id", eventId)
+    .maybeSingle();
+  if (!tournament) fail(eventId, null, "Tournament not found");
+  const { error } = await supabase
+    .from("basketball_tournaments")
+    .delete()
+    .eq("id", tournamentId)
+    .eq("event_id", eventId);
+  if (error) fail(eventId, tournamentId, error.message);
+  await refresh(eventId, slug);
+  redirect(path(eventId, null, { message: `${tournament.name} deleted` }));
+}
+
+export async function addBasketballMatch(formData: FormData) {
+  const eventId = text(formData, "event_id");
+  const tournamentId = text(formData, "tournament_id");
+  const homeTeamId = text(formData, "home_team_id");
+  const awayTeamId = text(formData, "away_team_id");
+  const tipoffAt = text(formData, "kickoff_at_iso") || null;
+  const court = text(formData, "court") || null;
+  const requestedStage = text(formData, "stage") as BasketballStage;
+  if (!eventId || !tournamentId) redirect("/admin/events");
+  if (!homeTeamId || !awayTeamId || homeTeamId === awayTeamId) fail(eventId, tournamentId, "Choose two different teams");
+  const { supabase, slug } = await requireAdmin(eventId);
+  const { data: tournament } = await supabase
+    .from("basketball_tournaments")
+    .select("format")
+    .eq("id", tournamentId)
+    .eq("event_id", eventId)
+    .single();
+  if (!tournament) fail(eventId, tournamentId, "Tournament not found");
+  const { data: teamRows } = await supabase
+    .from("basketball_tournament_teams")
+    .select("team_id")
+    .eq("tournament_id", tournamentId)
+    .in("team_id", [homeTeamId, awayTeamId]);
+  if (teamRows?.length !== 2) fail(eventId, tournamentId, "Both teams must be in this tournament");
+  const { data: lastMatch } = await supabase
+    .from("basketball_matches")
+    .select("position")
+    .eq("tournament_id", tournamentId)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const allowedStages: BasketballStage[] = [
+    "league",
+    "quarter_final",
+    "semi_final",
+    "third_place",
+    "final",
+    "friendly",
+  ];
+  const stage = allowedStages.includes(requestedStage)
+    ? requestedStage
+    : tournament.format === "league"
+      ? "league"
+      : "friendly";
+  const { error } = await supabase.from("basketball_matches").insert({
+    tournament_id: tournamentId,
+    event_id: eventId,
+    home_team_id: homeTeamId,
+    away_team_id: awayTeamId,
+    stage,
+    round_number: 1,
+    position: (lastMatch?.position ?? 0) + 1,
+    tipoff_at: tipoffAt,
+    court,
+  });
+  if (error) fail(eventId, tournamentId, error.message);
+  await refresh(eventId, slug);
+  redirect(path(eventId, tournamentId, { message: "Game added" }));
+}
+
 async function managedMatch(formData: FormData) {
   const eventId = text(formData, "event_id"); const tournamentId = text(formData, "tournament_id"); const matchId = text(formData, "match_id");
   if (!eventId || !tournamentId || !matchId) redirect("/admin/events");
@@ -99,13 +184,47 @@ async function applyCommand(
 
 export async function adjustBasketballScore(formData: FormData) {
   const context = await managedMatch(formData); const side = text(formData, "side"); const points = Number(text(formData, "points"));
-  if (!["home", "away"].includes(side) || ![-1, 1, 2, 3].includes(points)) fail(context.eventId, context.tournamentId, "Score change is invalid");
+  const focused = text(formData, "focused") === "true";
+  const failScore = (message: string): never => {
+    if (focused) redirect(`/admin/events/${context.eventId}/basketball/matches/${context.match.id}?error=${encodeURIComponent(message)}`);
+    fail(context.eventId, context.tournamentId, message);
+  };
+  if (!["home", "away"].includes(side) || ![-1, 1, 2, 3].includes(points)) failScore("Score change is invalid");
   formData.delete("expected_version");
   const { error } = await applyCommand(context, formData, "score_delta", {
     delta: points,
+    device_id: text(formData, "device_id"),
     side,
   });
-  if (error) fail(context.eventId, context.tournamentId, error.message);
+  if (error) failScore(error.message);
+}
+
+export async function setBasketballScore(formData: FormData) {
+  const context = await managedMatch(formData);
+  const homeScore = Number(text(formData, "home_score"));
+  const awayScore = Number(text(formData, "away_score"));
+  const focused = text(formData, "focused") === "true";
+  const failScore = (message: string): never => {
+    if (focused) redirect(`/admin/events/${context.eventId}/basketball/matches/${context.match.id}?error=${encodeURIComponent(message)}`);
+    fail(context.eventId, context.tournamentId, message);
+  };
+  if (
+    !Number.isInteger(homeScore) ||
+    !Number.isInteger(awayScore) ||
+    homeScore < 0 ||
+    awayScore < 0
+  ) {
+    failScore("Scores must be whole numbers of zero or more");
+  }
+  const { error } = await applyCommand(context, formData, "set_score", {
+    away_score: awayScore,
+    device_id: text(formData, "device_id"),
+    home_score: homeScore,
+  });
+  if (error) failScore(error.message);
+  await refresh(context.eventId, context.slug);
+  if (focused) redirect(`/admin/events/${context.eventId}/basketball/matches/${context.match.id}?message=Score%20corrected`);
+  redirect(path(context.eventId, context.tournamentId, { message: "Score corrected" }));
 }
 
 export async function updateBasketballSchedule(formData: FormData) {
@@ -127,11 +246,20 @@ export async function updateBasketballLifecycle(formData: FormData) {
     if (focused) redirect(`/admin/events/${context.eventId}/basketball/matches/${context.match.id}?error=${encodeURIComponent(message)}`);
     fail(context.eventId, context.tournamentId, message);
   };
-  if (!["start", "finish", "reopen"].includes(command)) failGame("Game action is invalid");
-  const { error } = await applyCommand(context, formData, command);
+  const { error } = await applyCommand(context, formData, command, {
+    device_id: text(formData, "device_id"),
+  });
   if (error) failGame(error.message);
   await refresh(context.eventId, context.slug);
-  const message = command === "start" ? "Game is live" : command === "finish" ? "Final score published" : "Game reopened";
+  const messages: Record<string, string> = {
+    claim_control: "Game control claimed",
+    finish: "Final score published",
+    release_control: "Game control released",
+    reopen: "Game reopened",
+    start: "Game is live",
+    take_control: "Game control taken over",
+  };
+  const message = messages[command] ?? "Game updated";
   if (focused) redirect(`/admin/events/${context.eventId}/basketball/matches/${context.match.id}?message=${encodeURIComponent(message)}`);
   redirect(path(context.eventId, context.tournamentId, { message }));
 }

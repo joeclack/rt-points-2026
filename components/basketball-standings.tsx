@@ -1,7 +1,7 @@
 import { calculateBasketballStandings, type BasketballTournament } from "@/lib/basketball-types";
 import type { Team } from "@/lib/sample-data";
 
-export function BasketballStandings({ tournament, teams }: { tournament: BasketballTournament; teams: Team[] }) {
+export function BasketballStandings({ tournament, teams }: { compact?: boolean; tournament: BasketballTournament; teams: Team[] }) {
   const rows = calculateBasketballStandings(tournament, teams);
   return (
     <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
